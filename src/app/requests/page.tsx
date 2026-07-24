@@ -66,7 +66,7 @@ function StatusChip({ status }: { status: RequestStatus }) {
 }
 
 /**
- * Age is the signal this page is built on, so it gets a colour.
+ * Age is the signal this page is built on, so it gets a color.
  * Hot uses the blocked red deliberately: past four days an unanswered request
  * is not "waiting", it is holding the return still.
  */

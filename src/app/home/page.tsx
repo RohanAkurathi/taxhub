@@ -408,7 +408,7 @@ function NextQuestion({
 }) {
   const replies = q.request.quickReplies ?? [];
   // A plain element rather than <Card>: the dominant action owns its own
-  // border weight, and overriding a Card's border colour would depend on
+  // border weight, and overriding a Card's border color would depend on
   // stylesheet ordering rather than intent.
   return (
     <div className="rounded-xl border-2 border-accentedge bg-canvas p-5">
@@ -449,15 +449,15 @@ function NextTask({ task, onDone }: { task: ClientTask; onDone: () => void }) {
       </div>
       <h2 className="mt-2.5 text-lg font-semibold leading-snug">{task.title}</h2>
       <p className="mt-1.5 text-sm leading-relaxed text-muted">{task.help}</p>
-      {task.optional && (
-        <p className="mt-1 text-sm text-muted">
-          Skip this if it doesn&apos;t apply to you.
-        </p>
-      )}
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button variant="primary" onClick={onDone}>
           {TASK_CTA[task.kind]}
         </Button>
+        {task.kind === "upload" && (
+          <span className="text-xs text-faint">
+            demo — marks it received without a real file
+          </span>
+        )}
         {task.optional && (
           <Button onClick={onDone}>Doesn&apos;t apply to me</Button>
         )}
@@ -489,7 +489,7 @@ function QuietRow({
       </p>
       <p className="mt-0.5 text-xs text-faint">
         {detail}
-        {optional && " Skip it if this doesn't apply to you."}
+
       </p>
     </div>
   );

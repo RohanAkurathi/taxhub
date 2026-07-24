@@ -24,7 +24,7 @@ const ENTRIES = [
     href: "/returns/ret-rivera-2025",
     title: "Review a return",
     detail:
-      "Every line traced to its source. Confirm a flagged number and watch the maths follow.",
+      "Every line traced to its source. Confirm a flagged number and watch the math follow.",
     tone: "accent" as const,
   },
   {
@@ -86,8 +86,8 @@ export default function Home() {
           <ul className="mt-2 space-y-2 text-sm leading-relaxed text-muted">
             <li>
               <strong className="text-ink">Real:</strong> the state machine on every
-              value, the audit trail, the progressive-bracket tax maths, search and
-              filtering over 240 returns, the prioritisation logic, and the permission
+              value, the audit trail, the progressive-bracket tax math, search and
+              filtering over 240 returns, the prioritization logic, and the permission
               boundary between firm-internal notes and client-visible messages.
             </li>
             <li>

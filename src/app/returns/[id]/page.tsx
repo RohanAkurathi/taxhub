@@ -11,16 +11,24 @@ import {
   Chip,
   EmptyState,
   Grade,
+  OwnerBadge,
   ProgressBar,
   SectionLabel,
   StatePill,
   cx,
 } from "@/components/ui";
 import { FIELD_STATE, STAGE, formatMoney } from "@/lib/design";
-import { daysUntil, openRequestsFor, relativeTime } from "@/lib/mockData";
+import { daysUntil, openRequestsFor, relativeTime, tasksFor } from "@/lib/mockData";
+import { returnSummaryById } from "@/lib/mockVolume";
 import { getWarnings } from "@/lib/mockAI";
 import { useStore } from "@/lib/store";
-import { RETURN_SECTIONS, type ReturnLine, type ReturnSection } from "@/lib/types";
+import {
+  RETURN_SECTIONS,
+  type ReturnLine,
+  type ReturnSection,
+  type ReturnSummary,
+  type TaxReturn,
+} from "@/lib/types";
 
 /* ---------------------------------------------------------------------------
    The return review workspace.
@@ -75,22 +83,34 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
     return () => clearTimeout(t);
   }, [lastChanges, clearChanges]);
 
+  // Most of the firm's book exists as summary data only. Rather than a dead
+  // end, show everything that IS known about the return and be explicit about
+  // where the line-level detail lives.
   if (!ret) {
-    return (
-      <Shell crumbs={[{ label: "Returns", href: "/returns" }, { label: "Not found" }]}>
-        <EmptyState
-          title="That return isn't in the prototype"
-          detail="Only three returns are built out in full. Try Marcus Rivera's."
-          action={
-            <Link href="/returns/ret-rivera-2025">
-              <Button variant="primary" size="sm">
-                Open Marcus Rivera's return
-              </Button>
-            </Link>
-          }
-        />
-      </Shell>
-    );
+    const summary = returnSummaryById(returnId);
+    if (!summary) {
+      return (
+        <Shell crumbs={[{ label: "Returns", href: "/returns" }, { label: "Unknown return" }]}>
+          <EmptyState
+            title="No return with that reference"
+            detail="The link may be out of date. All 240 returns are listed under Returns."
+            action={
+              <Link href="/returns">
+                <Button variant="primary" size="sm">
+                  Browse all returns
+                </Button>
+              </Link>
+            }
+          />
+        </Shell>
+      );
+    }
+    return <SummaryOnlyReturn summary={summary} />;
+  }
+
+  // A return that exists but has not been started yet — a brand-new client.
+  if (ret.lines.length === 0) {
+    return <NotStartedReturn ret={ret} />;
   }
 
   const attentionLines = ret.lines.filter((l) => FIELD_STATE[l.state].needsAttention);
@@ -301,6 +321,162 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * A return the firm has, but which this prototype only carries summary data
+ * for. Everything genuinely known about it is shown; the honest sentence about
+ * what is missing sits at the bottom rather than replacing the content.
+ */
+function SummaryOnlyReturn({ summary }: { summary: ReturnSummary }) {
+  return (
+    <Shell
+      crumbs={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Returns", href: "/returns" },
+        { label: summary.clientName },
+      ]}
+      right={<OwnerBadge owner={summary.owner} />}
+    >
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <SectionLabel>
+          {summary.formType} · tax year {summary.taxYear}
+        </SectionLabel>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+          {summary.clientName}
+        </h1>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Grade grade={summary.readinessGrade} />
+          <Chip tone="neutral">{STAGE[summary.stage].staff}</Chip>
+          <OwnerBadge owner={summary.owner} />
+          {summary.blockedDays ? (
+            <Chip tone="danger">Blocked {summary.blockedDays} days</Chip>
+          ) : null}
+        </div>
+
+        {summary.blockedReason && (
+          <Card tone="danger" className="mt-4 p-4">
+            <SectionLabel className="text-danger">What is holding it up</SectionLabel>
+            <p className="mt-1.5 text-sm">{summary.blockedReason}</p>
+          </Card>
+        )}
+
+        <Card className="mt-4 divide-y divide-hair p-0">
+          <Row label="Preparer" value={summary.preparerName} />
+          <Row label="Reviewer" value={summary.reviewerName} />
+          <Row
+            label="Due"
+            value={`${summary.dueDate}${
+              summary.dueDate.startsWith("2026-10") ? " (on extension)" : ""
+            }`}
+          />
+          <Row label="Last activity" value={relativeTime(summary.lastActivity)} />
+          <Row label="Open items" value={String(summary.openItems)} />
+          <Row label="Why it ranks where it does" value={summary.priorityReason} />
+        </Card>
+
+        <Card className="mt-4 p-4">
+          <SectionLabel>Line-level detail</SectionLabel>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">
+            This prototype carries the firm&rsquo;s full book of 240 returns so that
+            search, filtering and prioritization can be judged at real volume, but
+            only three are built out line by line. Those three are where the
+            traceability and review work can be seen end to end.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/returns/ret-rivera-2025">
+              <Button variant="primary" size="sm">
+                Marcus Rivera · a return mid-review
+              </Button>
+            </Link>
+            <Link href="/returns/ret-chen-2025">
+              <Button size="sm">Sarah Chen</Button>
+            </Link>
+            <Link href="/returns/ret-petrov-2025">
+              <Button size="sm">Elena Petrov · business return</Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    </Shell>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 px-4 py-2.5">
+      <span className="text-sm text-muted">{label}</span>
+      <span className="text-sm font-medium">{value}</span>
+    </div>
+  );
+}
+
+/** A real return that simply has not been started — nothing to review yet. */
+function NotStartedReturn({ ret }: { ret: TaxReturn }) {
+  const tasks = tasksFor(ret.id);
+  const outstanding = tasks.filter((t) => t.status !== "done");
+  return (
+    <Shell
+      crumbs={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Returns", href: "/returns" },
+        { label: ret.clientName },
+      ]}
+      right={<OwnerBadge owner="client" />}
+    >
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <SectionLabel>
+          {ret.formType} · tax year {ret.taxYear}
+        </SectionLabel>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{ret.clientName}</h1>
+        <p className="mt-2 text-sm text-muted">
+          {ret.preparerName} is preparing this · reviewed by {ret.reviewerName}
+        </p>
+
+        <Card className="mt-5 p-5">
+          <h2 className="text-[15px] font-medium">Nothing to review yet</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">
+            No documents have arrived, so the return has not been started. There is
+            nothing here to verify until {ret.clientName.split(" ")[0]} sends their
+            first form — showing an empty 1040 would only invite someone to fill it in
+            from memory.
+          </p>
+
+          {outstanding.length > 0 && (
+            <>
+              <SectionLabel className="mt-4">Waiting on the client</SectionLabel>
+              <ul className="mt-2 space-y-1.5">
+                {outstanding.map((t) => (
+                  <li key={t.id} className="text-sm">
+                    <span className="font-medium">{t.title}</span>
+                    {t.blocking && (
+                      <Chip tone="warn" className="ml-2">
+                        blocks everything else
+                      </Chip>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href={`/returns/${ret.id}/messages`}>
+              <Button variant="primary" size="sm">
+                Message the client
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button size="sm">Back to the dashboard</Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    </Shell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
 function SectionButton({
   label,
   count,
@@ -383,13 +559,12 @@ function LineTable({
     return t.items.filter((i) => i.kind === "request" && i.status !== "resolved").length;
   };
 
-  let lastSection: string | null = null;
-
   return (
     <ul>
-      {lines.map((line) => {
-        const showHeader = grouped && line.section !== lastSection;
-        if (showHeader) lastSection = line.section;
+      {lines.map((line, index) => {
+        // Derived from position rather than a variable mutated mid-render,
+        // which React's compiler rightly rejects.
+        const showHeader = grouped && line.section !== lines[index - 1]?.section;
         const meta = FIELD_STATE[line.state];
         const open = openThreadCount(line);
         const isSelected = line.id === selectedId;

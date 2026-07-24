@@ -111,7 +111,7 @@ const EXTRACTIONS: AIExtraction[] = [
     value: 1432,
     confidence: 0.68,
     rationale:
-      "The third digit is obscured by a scan artefact. Shape analysis favours a 3 over a 7, but not decisively.",
+      "The third digit is obscured by a scan artifact. Shape analysis favors a 3 over a 7, but not decisively.",
     corroboration:
       "Prior-year interest from the same payer was $1,395 — within 3% of the $1,432 reading, and 6% from $1,472.",
     targetLine: "2b",
@@ -173,7 +173,7 @@ const WARNINGS: AIWarning[] = [
     severity: "attention",
     title: "One digit on the Chase 1099-INT could not be read cleanly",
     detail:
-      "The interest amount reads as $1,432, but a scan artefact covers part of the third digit. The return currently carries $1,240, which matches neither reading.",
+      "The interest amount reads as $1,432, but a scan artifact covers part of the third digit. The return currently carries $1,240, which matches neither reading.",
     suggestedAction:
       "Confirm the amount against the paper copy, or ask Marcus to re-photograph the form.",
     relatedLines: ["2b"],

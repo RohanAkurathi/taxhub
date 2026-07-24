@@ -37,7 +37,7 @@ import type {
 
    The second idea here is that the permission boundary must be visible before
    you type, not after you send. Internal notes are a different shape, a
-   different colour, and the composer physically changes when you switch to
+   different color, and the composer physically changes when you switch to
    them — and "Client's view" proves the boundary in one click.
 --------------------------------------------------------------------------- */
 

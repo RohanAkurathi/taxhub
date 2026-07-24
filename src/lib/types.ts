@@ -156,6 +156,8 @@ export interface ReturnLine {
     byRole: Role;
     at: string;
     note: string;
+    /** What resolving this specific flag should record in the audit trail. */
+    resolution?: string;
   };
   /** Link to the conversation about this number (challenge 04). */
   threadId?: string;

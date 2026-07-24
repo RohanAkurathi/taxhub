@@ -14,7 +14,7 @@ import { gradeFromScore } from "./design";
 
    The prototype is pinned to a fixed demo date so the story stays internally
    consistent whenever it is opened: late March, three weeks out from the
-   April 15 deadline, which is when prioritisation actually matters.
+   April 15 deadline, which is when prioritization actually matters.
 --------------------------------------------------------------------------- */
 
 export const TODAY = new Date("2026-03-25T09:00:00");
@@ -234,7 +234,7 @@ export const DOCUMENTS: SourceDocument[] = [
     notice: "Handwritten amount. No matching bank record was found.",
     feedsLines: ["12b"],
     boxes: [
-      { id: "rcpt_org", label: "Organisation", value: "Goodwill Industries" },
+      { id: "rcpt_org", label: "Organization", value: "Goodwill Industries" },
       {
         id: "rcpt_amount",
         label: "Amount (handwritten)",
@@ -392,7 +392,7 @@ const RIVERA_LINES: ReturnLine[] = [
       value: 1432,
       confidence: 0.68,
       rationale:
-        "A scan artefact covers part of the third digit. Shape analysis favours $1,432, but not decisively.",
+        "A scan artifact covers part of the third digit. Shape analysis favors $1,432, but not decisively.",
       corroboration: "Prior-year interest from the same payer was $1,395.",
     },
     pipeline: [
@@ -582,6 +582,8 @@ const RIVERA_LINES: ReturnLine[] = [
       byRole: "reviewer",
       at: "2026-03-21T16:05:00",
       note: "Is the consulting work an SSTB? If Marcus consults for a single client for most of his income, the deduction may not stand at this bracket. Please confirm before this goes out.",
+      resolution:
+        "Confirmed with the client: the consulting work spans six clients, so it is not an SSTB and the deduction stands.",
     },
     provenance: {
       kind: "calculation",
@@ -939,6 +941,8 @@ const PETROV_LINES: ReturnLine[] = [
       byRole: "reviewer",
       at: "2026-03-24T14:20:00",
       note: "The basis worksheet for the second partnership is missing. We can't confirm the loss is deductible without it — please request it before I approve.",
+      resolution:
+        "Basis worksheet received from the client and checked against the K-1; the loss is within basis.",
     },
     provenance: {
       kind: "document",

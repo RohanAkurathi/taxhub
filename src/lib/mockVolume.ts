@@ -53,13 +53,32 @@ const STAFF = [
   "Nina Brandt",
 ];
 
-const BLOCKERS = [
+/*
+ * Blockers have to make sense for the stage a return is in. A return that is
+ * ready to file is waiting on a signature, not on a missing 1099 — and a CPA
+ * reading "ready to file · missing a 1099" would rightly read it as a bug.
+ */
+const DOC_BLOCKERS = [
   "Missing 1099-INT — requested from client",
   "Waiting on signed engagement letter",
   "K-1 not yet issued by the partnership",
   "Missing basis worksheet",
   "Client has not answered the dependents question",
   "Bank statements requested for a deduction",
+  "Prior-year return not provided",
+];
+
+const SIGNATURE_BLOCKERS = [
+  "E-signature sent — not signed yet",
+  "Waiting on the client to approve the final return",
+  "Payment authorization not returned",
+];
+
+/** Blockers that only apply to an entity return. */
+const ENTITY_BLOCKERS = [
+  "K-1 not yet issued by the partnership",
+  "Missing basis worksheet",
+  "Waiting on signed engagement letter",
   "Prior-year return not provided",
 ];
 
@@ -187,7 +206,13 @@ function generateSummaries(count: number): ReturnSummary[] {
 
     const stuck = owner === "client" && rng() > 0.45;
     const blockedDays = stuck ? 1 + Math.floor(rng() * 12) : undefined;
-    const blockedReason = stuck ? pick(rng, BLOCKERS) : undefined;
+    const blockedReason = stuck
+      ? stage === "ready_to_file"
+        ? pick(rng, SIGNATURE_BLOCKERS)
+        : formType === "1040"
+        ? pick(rng, DOC_BLOCKERS)
+        : pick(rng, ENTITY_BLOCKERS)
+      : undefined;
 
     const openItems =
       stage === "filed" ? 0 : Math.floor(rng() * (stuck ? 3 : 2)) + (stuck ? 1 : 0);
@@ -284,7 +309,7 @@ function heroSummaries(): ReturnSummary[] {
 /** The firm's whole book of business. Hero returns first so they're findable. */
 export const ALL_RETURNS: ReturnSummary[] = [
   ...heroSummaries(),
-  ...generateSummaries(237),
+  ...generateSummaries(236),
 ];
 
 export const MY_RETURNS = ALL_RETURNS.filter(

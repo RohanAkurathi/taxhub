@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ROLE } from "@/lib/design";
 import { useStore } from "@/lib/store";
@@ -61,10 +61,29 @@ export function Shell({
 }) {
   const { acting, setActing, role, returns } = useStore();
   const pathname = usePathname();
+  const router = useRouter();
   const nav = ROLE[role].nav;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Changing role has to move you as well as re-label you. Staying on a client
+   * page while "acting as preparer" would show firm navigation wrapped around
+   * client content — the exact confusion the role architecture exists to
+   * prevent — so a switch that crosses the boundary navigates to that role's
+   * home.
+   */
+  const switchTo = (next: Parameters<typeof setActing>[0]) => {
+    setActing(next);
+    setMenuOpen(false);
+    const inClientArea = pathname.startsWith("/home");
+    if (next.kind === "staff" && inClientArea) {
+      router.push(ROLE[next.role].home);
+    } else if (next.kind === "self" && !inClientArea) {
+      router.push("/home");
+    }
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -132,7 +151,12 @@ export function Shell({
                 : "border-accentedge bg-accentsoft text-accentink"
             )}
           >
-            Viewing as: {viewingAsSelf ? "Myself (client)" : ROLE[role].label}
+            Viewing as:{" "}
+            {viewingAsSelf
+              ? acting.as === "reyes"
+                ? "Myself (client)"
+                : "Sarah Chen (client)"
+              : ROLE[role].label}
             <span aria-hidden="true">▾</span>
           </button>
 
@@ -163,10 +187,7 @@ export function Shell({
                 <button
                   key={opt.role}
                   role="menuitem"
-                  onClick={() => {
-                    setActing({ kind: "staff", role: opt.role });
-                    setMenuOpen(false);
-                  }}
+                  onClick={() => switchTo({ kind: "staff", role: opt.role })}
                   className={cx(
                     "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
                     !viewingAsSelf && role === opt.role && "bg-accentsoft"
@@ -184,10 +205,7 @@ export function Shell({
               </p>
               <button
                 role="menuitem"
-                onClick={() => {
-                  setActing({ kind: "self", role: "client", as: "reyes" });
-                  setMenuOpen(false);
-                }}
+                onClick={() => switchTo({ kind: "self", role: "client", as: "reyes" })}
                 className={cx(
                   "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
                   viewingAsSelf && acting.as === "reyes" && "bg-oksoft"
@@ -203,10 +221,7 @@ export function Shell({
               </button>
               <button
                 role="menuitem"
-                onClick={() => {
-                  setActing({ kind: "self", role: "client", as: "chen" });
-                  setMenuOpen(false);
-                }}
+                onClick={() => switchTo({ kind: "self", role: "client", as: "chen" })}
                 className={cx(
                   "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
                   viewingAsSelf && acting.as === "chen" && "bg-oksoft"
@@ -230,9 +245,11 @@ export function Shell({
       {/* A mode this unusual should never be silent. */}
       {viewingAsSelf && (
         <div className="flex items-center gap-2 border-b border-okedge bg-oksoft px-4 py-1.5 text-xs font-medium text-ok">
-          You are viewing your own return as a client. Firm tools are hidden.
+          {acting.kind === "self" && acting.as === "reyes"
+            ? "You are viewing your own return as a client. Firm tools are hidden."
+            : "You are seeing exactly what Sarah Chen sees. Firm tools are hidden."}
           <button
-            onClick={() => setActing({ kind: "staff", role: "preparer" })}
+            onClick={() => switchTo({ kind: "staff", role: "preparer" })}
             className="underline hover:no-underline"
           >
             Back to Preparer

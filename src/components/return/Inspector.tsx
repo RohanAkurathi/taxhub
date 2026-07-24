@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { PipelineStep, ReturnLine, TaxReturn } from "@/lib/types";
 import { FIELD_STATE, formatMoney } from "@/lib/design";
 import { documentById, relativeTime } from "@/lib/mockData";
@@ -49,14 +49,22 @@ export function Inspector({
   const [draft, setDraft] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
-  // A new selection is a new decision — never carry "I looked at the evidence"
-  // across lines.
-  useEffect(() => {
+  /*
+   * A new selection is a new decision — "I have looked at the evidence" must
+   * never carry across lines, or the confirm gate would be defeated simply by
+   * having opened some other line's document first.
+   *
+   * Reset during render rather than in an effect: an effect would let one
+   * frame paint with the previous line's evidence flag still true.
+   */
+  const [seenLineId, setSeenLineId] = useState(line.id);
+  if (seenLineId !== line.id) {
+    setSeenLineId(line.id);
     setCheckedEvidence(false);
     setEditing(false);
     setShowHistory(false);
     setDraft(line.amount === null ? "" : String(line.amount));
-  }, [line.id, line.amount]);
+  }
 
   const meta = FIELD_STATE[line.state];
   const warnings = getWarningsForLine(ret.id, line.id);
@@ -264,7 +272,11 @@ export function Inspector({
                   resolveFlag(
                     ret.id,
                     line.id,
-                    "Confirmed with the client: the consulting work spans six clients, so it is not an SSTB."
+                    // The note has to describe THIS flag. An earlier version
+                    // wrote one hardcoded sentence, which cheerfully recorded
+                    // the wrong resolution against every other flagged line.
+                    line.flag!.resolution ??
+                      `Resolved ${line.flag!.byName}'s question on line ${line.id}.`
                   )
                 }
               >
@@ -329,7 +341,14 @@ export function Inspector({
                 Nothing has changed on this line since the return was created.
               </li>
             )}
-            {line.history.map((h, i) => (
+            {/*
+              Newest first. The store prepends live changes while the seeded
+              entries are oldest-first, so rendering in array order produced a
+              history that jumped "just now → last week → yesterday".
+            */}
+            {[...line.history]
+              .sort((a, b) => b.at.localeCompare(a.at))
+              .map((h, i) => (
               <li key={i} className="border-l-2 border-hair pl-2.5 text-xs">
                 <p className="leading-snug">{h.detail}</p>
                 <p className="mt-0.5 text-[11px] text-faint">
@@ -343,7 +362,7 @@ export function Inspector({
                   )}
                 </p>
               </li>
-            ))}
+              ))}
           </ol>
         )}
         <p className="mt-2.5 text-[11px] leading-relaxed text-faint">
@@ -532,7 +551,7 @@ function ThreadPreview({ threadId, returnId }: { threadId: string; returnId: str
                 )}
               >
                 <span className="font-medium">
-                  {item.visibility === "internal" && "🔒 "}
+                  {item.visibility === "internal" && "⊘ "}
                   {item.author}
                 </span>
                 : {item.body.slice(0, 90)}

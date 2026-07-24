@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useStore } from "@/lib/store";
 
 /**
- * Entering the client area switches the acting context.
+ * Entering the client area switches the acting context, so client content is
+ * never wrapped in firm navigation.
  *
- * Without this, a preparer who follows a link into /home sees client content
- * wrapped in firm navigation — which is exactly the "one product, six roles,
- * total confusion" failure the role architecture exists to prevent. The shell
- * shows a banner while in this mode, so the switch is never silent.
+ * This runs once on entry and then gets out of the way. An earlier version
+ * re-asserted the client context whenever `acting` changed, which meant the
+ * "Back to Preparer" link and the role switcher both appeared to do nothing:
+ * they set the context and this effect immediately set it back. A control that
+ * silently undoes itself is worse than one that isn't there.
  */
 export default function ClientAreaLayout({
   children,
@@ -17,8 +19,11 @@ export default function ClientAreaLayout({
   children: React.ReactNode;
 }) {
   const { acting, setActing } = useStore();
+  const applied = useRef(false);
 
   useEffect(() => {
+    if (applied.current) return;
+    applied.current = true;
     if (acting.kind !== "self") {
       setActing({ kind: "self", role: "client", as: "reyes" });
     }

@@ -51,7 +51,7 @@ const OWNER_MEANING: Record<Owner, string> = {
   preparer: "It is in your queue and nobody else is waiting on anybody. Blue, because it is live work.",
   reviewer: "Handed to a second accountant. You can still read everything; you cannot advance it.",
   client: "Nothing the firm does moves this forward. Amber, because it needs a human who is not in the building.",
-  system: "The AI is reading documents. Minutes, not days. Grey, because there is nothing to do but wait.",
+  system: "The AI is reading documents. Minutes, not days. Gray, because there is nothing to do but wait.",
   none: "Closed. Filed, resolved, or answered. Green, and it stops appearing in queues.",
 };
 
@@ -61,7 +61,7 @@ const HUES: { tone: "accent" | "warn" | "ok" | "flag" | "neutral" | "danger"; na
   { tone: "warn", name: "Amber", means: "A human has to do something" },
   { tone: "ok", name: "Green", means: "A person verified it, or it is done" },
   { tone: "flag", name: "Violet", means: "A person flagged it, or it awaits approval" },
-  { tone: "neutral", name: "Grey", means: "Locked or calculated — not yours to change" },
+  { tone: "neutral", name: "Gray", means: "Locked or calculated — not yours to change" },
   { tone: "danger", name: "Red", means: "Blocked. Never used decoratively" },
 ];
 
@@ -114,15 +114,15 @@ const NEGATIVES: { rule: string; because: string }[] = [
     because: "It renders as plain text with the reason beside it. A greyed-out box still looks like a box, so it invites a click and then refuses it — which reads as a bug, not a policy.",
   },
   {
-    rule: "Colour is never the only signal.",
-    because: "Every state carries a glyph and a word as well as a hue, so the system survives colour-blindness, a greyscale printout, and a projector. Turn colour off below and read it again.",
+    rule: "Color is never the only signal.",
+    because: "Every state carries a glyph and a word as well as a hue, so the system survives color-blindness, a grayscale printout, and a projector. Turn color off below and read it again.",
   },
   {
     rule: "A state pill is never a button.",
     because: "Status and action are different jobs. If something can be done, there is a real button next to the pill saying what it does.",
   },
   {
-    rule: "Grey does not mean unimportant.",
+    rule: "Gray does not mean unimportant.",
     because: "It means not yours to change. A calculated total is often the most important number on the page.",
   },
   {
@@ -135,27 +135,27 @@ const NEGATIVES: { rule: string; because: string }[] = [
   },
   {
     rule: "Amber is rationed.",
-    because: "It is the single attention colour. If everything that might matter were amber, nothing would be — so only states with needsAttention set may use it.",
+    because: "It is the single attention color. If everything that might matter were amber, nothing would be — so only states with needsAttention set may use it.",
   },
 ];
 
-const CONFIDENCE_TIERS: { value: number; band: string; behaviour: string }[] = [
+const CONFIDENCE_TIERS: { value: number; band: string; behavior: string }[] = [
   {
     value: 0.99,
     band: "95% and above",
-    behaviour:
+    behavior:
       "Applied quietly. The line shows AI-read and nothing else. High confidence that shouts trains people to click through warnings, which is exactly the habit that lets a real error past.",
   },
   {
     value: 0.88,
     band: "85% to 94%",
-    behaviour:
+    behavior:
       "Applied, but the source box is shown alongside it so a preparer can spot-check in one glance without opening anything.",
   },
   {
     value: 0.68,
     band: "Below 85%",
-    behaviour:
+    behavior:
       "Never applied unattended. The line goes to Check, the value is held rather than written, and the return cannot reach Ready to file while it sits there.",
   },
 ];
@@ -163,7 +163,7 @@ const CONFIDENCE_TIERS: { value: number; band: string; behaviour: string }[] = [
 /* -------------------------------------------------------------------------- */
 
 export default function DesignSystemPage() {
-  // Colour is a redundancy, not the message. This proves it on demand.
+  // Color is a redundancy, not the message. This proves it on demand.
   const [mono, setMono] = useState(false);
 
   return (
@@ -205,18 +205,18 @@ export default function DesignSystemPage() {
           </dl>
           <p className="mt-5 border-t border-hair pt-4 text-sm leading-relaxed text-muted">
             <strong className="font-medium text-ink">
-              Colour is never the only signal.
+              Color is never the only signal.
             </strong>{" "}
             Every state also carries a glyph and a word — <span aria-hidden="true">▲</span>{" "}
             Check, <span aria-hidden="true">✓</span> Verified,{" "}
-            <span aria-hidden="true">∑</span> Calculated. Read in greyscale, printed in
+            <span aria-hidden="true">∑</span> Calculated. Read in grayscale, printed in
             black and white, or seen by someone who cannot distinguish amber from green,
-            the system still works. The greyscale switch below is not a gimmick; it is
+            the system still works. The grayscale switch below is not a gimmick; it is
             the acceptance test for every new state.
           </p>
         </Card>
 
-        {/* Greyscale switch ----------------------------------------------- */}
+        {/* Grayscale switch ----------------------------------------------- */}
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">
@@ -234,15 +234,15 @@ export default function DesignSystemPage() {
             onClick={() => setMono((m) => !m)}
             variant={mono ? "primary" : "default"}
             size="sm"
-            title="Removes all colour from the catalogue below"
+            title="Removes all color from the catalog below"
           >
-            {mono ? "Bring colour back" : "Read it without colour"}
+            {mono ? "Bring color back" : "Read it without color"}
           </Button>
         </div>
 
         {/* Everything inside this wrapper must survive losing its hue. */}
         <div className={cx(mono && "grayscale")}>
-          {/* State catalogue ---------------------------------------------- */}
+          {/* State catalog ---------------------------------------------- */}
           <Card className="mt-4 divide-y divide-hair">
             {FIELD_STATE_ORDER.map((state) => {
               const meta = FIELD_STATE[state];
@@ -254,7 +254,7 @@ export default function DesignSystemPage() {
                   <div className="flex flex-col items-start gap-2">
                     <StatePill state={state} />
                     <div className="flex flex-wrap gap-1.5">
-                      {/* Grey means "not yours to change", so only read-only earns it. */}
+                      {/* Gray means "not yours to change", so only read-only earns it. */}
                       <Chip tone={meta.editable ? "accent" : "neutral"}>
                         {meta.editable ? "Editable" : "Read-only"}
                       </Chip>
@@ -534,7 +534,7 @@ export default function DesignSystemPage() {
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
             A raw score is never printed on its own. A preparer does not need to know the
             model returned 0.68; they need to know whether to go and look. So confidence
-            is banded, and the band decides the behaviour — not just the wording.
+            is banded, and the band decides the behavior — not just the wording.
           </p>
           <Card className="mt-4 divide-y divide-hair">
             {CONFIDENCE_TIERS.map((t) => (
@@ -546,7 +546,7 @@ export default function DesignSystemPage() {
                   <ConfidenceNote value={t.value} />
                   <span className="text-xs text-faint">{t.band}</span>
                 </div>
-                <p className="text-sm leading-relaxed text-muted">{t.behaviour}</p>
+                <p className="text-sm leading-relaxed text-muted">{t.behavior}</p>
               </div>
             ))}
           </Card>
@@ -587,7 +587,7 @@ export default function DesignSystemPage() {
                 <code className="rounded bg-locksoft px-1 py-0.5 text-xs">
                   needsAttention
                 </code>{" "}
-                flags. Those two booleans drive real behaviour — whether an input renders,
+                flags. Those two booleans drive real behavior — whether an input renders,
                 and whether the line counts against readiness.
               </li>
               <li>
@@ -624,7 +624,7 @@ export default function DesignSystemPage() {
  * Self-contained on purpose: it demonstrates the affordance contract without
  * writing to a real client's return from a reference page. Everything it claims
  * — click-to-edit on an editable line, no input at all on a locked one, and the
- * calculated total following on its own — is the same behaviour the return
+ * calculated total following on its own — is the same behavior the return
  * screen implements against the store.
  */
 function LockedVsEditableDemo() {
@@ -708,7 +708,7 @@ function LockedVsEditableDemo() {
             >
               {formatMoney(total)}
               <span className="ml-2 text-xs font-normal text-muted">
-                {showFormula ? "hide the maths" : "why can't I edit this?"}
+                {showFormula ? "hide the math" : "why can't I edit this?"}
               </span>
             </button>
           </div>

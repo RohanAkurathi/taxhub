@@ -24,7 +24,7 @@ import type {
    They can check "dividends from your investments — we took this from your
    Vanguard statement".
 
-   States keep the firm's colours and lose the firm's words: amber still means
+   States keep the firm's colors and lose the firm's words: amber still means
    a person has to settle it, it just reads "we're checking this" instead of
    "needs review".
 --------------------------------------------------------------------------- */
@@ -46,7 +46,7 @@ const PLAIN_LINE: Record<string, string> = {
   "19": "Credit for your daughter",
   "24": "Your total tax for the year",
   "25a": "Tax already taken out of your pay",
-  "26": "Tax you paid in instalments",
+  "26": "Tax you paid in installments",
   "33": "Everything you've already paid",
   "34": "What comes back to you",
 };
@@ -71,7 +71,7 @@ const DOC_NOUN: Record<DocumentType, string> = {
   other: "document",
 };
 
-/** The firm's colours, the client's words. */
+/** The firm's colors, the client's words. */
 const PLAIN_STATE: Record<FieldState, { label: string; tone: "ok" | "accent" | "warn" | "flag" | "neutral" }> = {
   verified: { label: "Checked by us", tone: "ok" },
   edited: { label: "Corrected by us", tone: "accent" },
