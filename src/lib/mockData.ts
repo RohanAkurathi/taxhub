@@ -1045,6 +1045,29 @@ export const HERO_RETURNS: TaxReturn[] = [
     readiness: computeReadiness(CHEN_LINES, 1),
     outcome: { kind: "refund", amount: 2140, provisional: true },
   },
+  /*
+   * Jordan's own return, and the reason it exists is twofold.
+   *
+   * It is the firm employee who is also a client of the firm — the awkward
+   * case the role architecture has to survive. And because he has only just
+   * signed up, it is also the genuinely blank, day-one client account: no
+   * documents, no lines, nothing to unlearn. The first-run experience needs a
+   * real empty account to be honest, not a half-finished one.
+   */
+  {
+    id: "ret-reyes-2025",
+    clientId: "u-jordan",
+    clientName: "Jordan Reyes",
+    formType: "1040",
+    taxYear: 2025,
+    stage: "docs_pending",
+    preparerName: "Rita Alvarez",
+    reviewerName: "Dana Whitfield",
+    dueDate: "2026-04-15",
+    lastActivity: "2026-03-25T08:15:00",
+    lines: [],
+    readiness: { grade: "—", score: 0, linesSettled: 0, linesTotal: 0, openItems: 0 },
+  },
   {
     id: "ret-petrov-2025",
     clientId: "u-elena",
@@ -1100,6 +1123,38 @@ export const CLIENT_TASKS: ClientTask[] = [
     optional: true,
     estimateMinutes: 2,
     completedAt: "2026-03-19T08:41:00",
+  },
+  /* The day-one account: nothing done yet, and one obvious place to start. */
+  {
+    id: "task-reyes-w2",
+    returnId: "ret-reyes-2025",
+    title: "Upload your W-2",
+    help: "The wage form your employer sent you in January. A clear photo of it is fine.",
+    kind: "upload",
+    status: "todo",
+    blocking: true,
+    estimateMinutes: 2,
+  },
+  {
+    id: "task-reyes-questions",
+    returnId: "ret-reyes-2025",
+    title: "Answer 4 quick questions",
+    help: "Dependents, address changes, and anything unusual about your year.",
+    kind: "questionnaire",
+    status: "todo",
+    blocking: true,
+    estimateMinutes: 3,
+  },
+  {
+    id: "task-reyes-1099",
+    returnId: "ret-reyes-2025",
+    title: "Add any 1099 forms",
+    help: "Bank interest, dividends, or freelance income. Skip this if you didn't get any.",
+    kind: "upload",
+    status: "todo",
+    blocking: false,
+    optional: true,
+    estimateMinutes: 2,
   },
   {
     id: "task-rivera-1099int",
@@ -1277,6 +1332,21 @@ export const THREADS: Thread[] = [
           value: "$2,000",
           note: "Child tax credit for one qualifying dependent.",
         },
+      },
+    ],
+  },
+  {
+    id: "thread-reyes-welcome",
+    returnId: "ret-reyes-2025",
+    items: [
+      {
+        kind: "message",
+        id: "m-welcome",
+        author: "Rita Alvarez",
+        authorRole: "preparer",
+        visibility: "client",
+        body: "Hi Jordan — I'll be preparing your return this year. Send over your W-2 whenever you have it and I'll take it from there. If anything looks unclear, just ask me here.",
+        at: "2026-03-25T08:15:00",
       },
     ],
   },

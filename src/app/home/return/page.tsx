@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
-import { Card, Chip, EmptyState, SectionLabel } from "@/components/ui";
+import { Button, Card, Chip, EmptyState, SectionLabel } from "@/components/ui";
 import { STAGE, formatMoney } from "@/lib/design";
 import { documentsFor } from "@/lib/mockData";
 import { useStore } from "@/lib/store";
@@ -29,7 +29,6 @@ import type {
    "needs review".
 --------------------------------------------------------------------------- */
 
-const RETURN_ID = "ret-chen-2025";
 
 const PLAIN_LINE: Record<string, string> = {
   "1a": "What your employer paid you",
@@ -86,8 +85,8 @@ const PLAIN_STATE: Record<FieldState, { label: string; tone: "ok" | "accent" | "
 };
 
 export default function ClientReturn() {
-  const { getReturn, threads } = useStore();
-  const ret = getReturn(RETURN_ID);
+  const { getReturn, threads, clientReturnId } = useStore();
+  const ret = getReturn(clientReturnId);
 
   const crumbs = [
     { label: "Your 2025 return", href: "/home" },
@@ -102,7 +101,7 @@ export default function ClientReturn() {
     );
   }
 
-  const docs = documentsFor(RETURN_ID);
+  const docs = documentsFor(clientReturnId);
 
   /** Where a number came from, said the way a person would say it. */
   function sourceOf(line: ReturnLine): { text: string; docLink: boolean } {
@@ -133,7 +132,7 @@ export default function ClientReturn() {
 
   /** An open question the firm has asked the client about this exact number. */
   function questionFor(line: ReturnLine) {
-    for (const t of threads.filter((t) => t.returnId === RETURN_ID)) {
+    for (const t of threads.filter((t) => t.returnId === clientReturnId)) {
       for (const item of t.items) {
         if (
           item.kind === "request" &&
@@ -189,6 +188,28 @@ export default function ClientReturn() {
 
         {/* What we included -------------------------------------------- */}
         <h2 className="mt-8 text-lg font-semibold">What we included</h2>
+
+        {/*
+          A brand-new client has no return yet. Saying so plainly is better
+          than an empty heading, which reads as something that failed to load.
+        */}
+        {sections.length === 0 && (
+          <Card className="mt-3 p-5">
+            <p className="text-[15px] font-medium">
+              There&rsquo;s nothing on your return yet.
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+              As soon as you send us your forms, we&rsquo;ll start filling this in — and
+              every number that appears here will show you the document it came from.
+            </p>
+            <Link href="/home" className="mt-3 inline-block">
+              <Button size="sm" variant="primary">
+                See what we need from you
+              </Button>
+            </Link>
+          </Card>
+        )}
+
         <div className="mt-3 space-y-5">
           {sections.map(({ section, lines }) => (
             <div key={section}>

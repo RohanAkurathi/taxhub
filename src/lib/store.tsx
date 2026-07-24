@@ -44,7 +44,19 @@ import type { ClientTask } from "./types";
 
 export type ActingContext =
   | { kind: "staff"; role: Extract<Role, "preparer" | "reviewer" | "admin"> }
-  | { kind: "self"; role: "client" };
+  /**
+   * The client experience. `as` names whose account is being viewed:
+   *   "reyes" — Jordan's own return: a firm employee who is also a client of
+   *             the firm, and whose account is brand new and empty.
+   *   "chen"  — Sarah's return, several weeks in, so the same screens can be
+   *             seen once onboarding is behind you.
+   */
+  | { kind: "self"; role: "client"; as: "reyes" | "chen" };
+
+export const CLIENT_ACCOUNTS = {
+  reyes: { returnId: "ret-reyes-2025", name: "Jordan Reyes" },
+  chen: { returnId: "ret-chen-2025", name: "Sarah Chen" },
+} as const;
 
 interface Toast {
   id: number;
@@ -59,6 +71,9 @@ interface Store {
   setActing: (a: ActingContext) => void;
   role: Role;
   userName: string;
+  /** Which return the client portal is showing. Never hardcode this. */
+  clientReturnId: string;
+  clientName: string;
 
   /* Data */
   returns: TaxReturn[];
@@ -106,7 +121,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [lastChanges, setLastChanges] = useState<RecalcChange[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const userName = acting.kind === "self" ? "Jordan Reyes" : "Jordan Reyes";
+  const account =
+    acting.kind === "self" ? CLIENT_ACCOUNTS[acting.as] : CLIENT_ACCOUNTS.reyes;
+  const clientReturnId = account.returnId;
+  const clientName = account.name;
+
+  const userName = "Jordan Reyes";
   const actorName =
     acting.kind === "staff" && acting.role === "reviewer"
       ? "Dana Whitfield"
@@ -479,6 +499,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setActing,
       role: acting.kind === "self" ? "client" : acting.role,
       userName,
+      clientReturnId,
+      clientName,
       returns,
       threads,
       tasks,
@@ -500,6 +522,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [
       acting,
       userName,
+      clientReturnId,
+      clientName,
       returns,
       threads,
       tasks,

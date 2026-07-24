@@ -65,7 +65,7 @@ export default function Home() {
                 onClick={() =>
                   setActing(
                     e.href === "/home"
-                      ? { kind: "self", role: "client" }
+                      ? { kind: "self", role: "client", as: "reyes" }
                       : { kind: "staff", role: "preparer" }
                   )
                 }

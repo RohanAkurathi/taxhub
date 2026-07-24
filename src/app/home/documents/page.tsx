@@ -18,7 +18,6 @@ import type { DocumentType, SourceDocument, ThreadItem } from "@/lib/types";
    green/amber the firm's screens use, in words a person would actually say.
 --------------------------------------------------------------------------- */
 
-const RETURN_ID = "ret-chen-2025";
 
 const PLAIN_DOC: Record<DocumentType, { what: string; why: string }> = {
   "W-2": {
@@ -71,9 +70,9 @@ const PLAIN_LINE: Record<string, string> = {
 };
 
 export default function ClientDocuments() {
-  const { getReturn, threads } = useStore();
-  const ret = getReturn(RETURN_ID);
-  const docs = documentsFor(RETURN_ID);
+  const { getReturn, threads, clientReturnId } = useStore();
+  const ret = getReturn(clientReturnId);
+  const docs = documentsFor(clientReturnId);
 
   // Files chosen in this preview. They are not saved anywhere, and the copy
   // below says so rather than pretending an upload happened.
@@ -100,7 +99,7 @@ export default function ClientDocuments() {
         (l) => l.provenance.kind === "document" && l.provenance.documentId === doc.id
       )
       .map((l) => l.id);
-    for (const t of threads.filter((t) => t.returnId === RETURN_ID)) {
+    for (const t of threads.filter((t) => t.returnId === clientReturnId)) {
       for (const item of t.items) {
         if (
           item.kind === "request" &&

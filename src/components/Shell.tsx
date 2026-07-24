@@ -179,23 +179,45 @@ export function Shell({
 
               {/* The firm employee who is also a client of the firm. */}
               <div className="my-1 border-t border-hair" />
+              <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-faint">
+                As a client
+              </p>
               <button
                 role="menuitem"
                 onClick={() => {
-                  setActing({ kind: "self", role: "client" });
+                  setActing({ kind: "self", role: "client", as: "reyes" });
                   setMenuOpen(false);
                 }}
                 className={cx(
                   "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
-                  viewingAsSelf && "bg-oksoft"
+                  viewingAsSelf && acting.as === "reyes" && "bg-oksoft"
                 )}
               >
                 <span className="flex items-center gap-2 font-medium">
                   My own tax return
-                  <Chip tone="ok">client view</Chip>
+                  <Chip tone="ok">brand new</Chip>
                 </span>
                 <span className="block text-xs text-muted">
-                  You are a client of the firm too — this is exactly what your clients see
+                  You are a client of the firm too. Nothing uploaded yet — this is day one.
+                </span>
+              </button>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setActing({ kind: "self", role: "client", as: "chen" });
+                  setMenuOpen(false);
+                }}
+                className={cx(
+                  "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
+                  viewingAsSelf && acting.as === "chen" && "bg-oksoft"
+                )}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  Sarah Chen&rsquo;s view
+                  <Chip tone="accent">weeks in</Chip>
+                </span>
+                <span className="block text-xs text-muted">
+                  The same screens once onboarding is behind you
                 </span>
               </button>
             </div>

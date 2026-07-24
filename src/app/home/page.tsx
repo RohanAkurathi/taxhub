@@ -39,7 +39,6 @@ import type { ClientTask, Stage, ThreadItem } from "@/lib/types";
    that can drift out of sync.
 --------------------------------------------------------------------------- */
 
-const RETURN_ID = "ret-chen-2025";
 
 const JOURNEY_COPY: Record<Stage, { turn: string; detail: string }> = {
   docs_pending: { turn: "Your turn", detail: "You send us your forms" },
@@ -67,8 +66,8 @@ function plural(n: number, one: string, many: string) {
 }
 
 export default function ClientHome() {
-  const { getReturn, tasks, threads, completeTask, resolveRequest } = useStore();
-  const ret = getReturn(RETURN_ID);
+  const { getReturn, tasks, threads, completeTask, resolveRequest, clientReturnId } = useStore();
+  const ret = getReturn(clientReturnId);
 
   if (!ret) {
     return (
@@ -84,7 +83,7 @@ export default function ClientHome() {
   // tasksFor() is the frozen seed; the store holds the live copy that
   // completeTask writes to. Reading order from one and status from the other
   // keeps the list stable while still reacting to a click.
-  const myTasks = tasksFor(RETURN_ID).map(
+  const myTasks = tasksFor(clientReturnId).map(
     (seed) => tasks.find((t) => t.id === seed.id) ?? seed
   );
   const doneTasks = myTasks.filter((t) => t.status === "done");
@@ -96,7 +95,7 @@ export default function ClientHome() {
   // move" as an unfinished checklist item — so it belongs on this page, not
   // only in Messages. Without it, the calm panel below would be a lie.
   const questions: OpenQuestion[] = threads
-    .filter((t) => t.returnId === RETURN_ID)
+    .filter((t) => t.returnId === clientReturnId)
     .flatMap((t) => t.items.map((item) => ({ threadId: t.id, item })))
     .filter(
       (x): x is { threadId: string; item: Extract<ThreadItem, { kind: "request" }> } =>
@@ -114,7 +113,7 @@ export default function ClientHome() {
   const quietQuestions = questions.slice(1);
   const dominantTask = questions.length === 0 ? nextTask : undefined;
   const listTasks = myTasks.filter((t) => t.id !== dominantTask?.id);
-  const docCount = documentsFor(RETURN_ID).length;
+  const docCount = documentsFor(clientReturnId).length;
   // Steps still ahead. Sliced past the current milestone, because the strip
   // above already says "you are here" — repeating it under "what happens next"
   // reads as though the current stage hasn't started. At `filed` this is empty,
@@ -136,7 +135,15 @@ export default function ClientHome() {
           Your {ret.taxYear} return
         </h1>
         <p className="mt-2 text-[17px] leading-relaxed text-ink">
-          {STAGE[ret.stage].client}.{" "}
+          {/*
+            Once the client has finished their part, saying "we need documents
+            from you" is simply untrue — the stage has not advanced yet on the
+            firm's side, but from where the client is standing the handover has
+            already happened, and the sentence has to say so.
+          */}
+          {nothingOutstanding && ret.stage === "docs_pending"
+            ? "Thank you — that's everything we needed."
+            : `${STAGE[ret.stage].client}.`}{" "}
           <span className="text-muted">{secondLine}</span>
         </p>
         <p className="mt-1.5 text-sm text-muted">

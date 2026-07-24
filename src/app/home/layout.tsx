@@ -20,7 +20,7 @@ export default function ClientAreaLayout({
 
   useEffect(() => {
     if (acting.kind !== "self") {
-      setActing({ kind: "self", role: "client" });
+      setActing({ kind: "self", role: "client", as: "reyes" });
     }
   }, [acting.kind, setActing]);
 

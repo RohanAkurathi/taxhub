@@ -20,7 +20,6 @@ import type { Thread, ThreadItem } from "@/lib/types";
    without the internal phrasing.
 --------------------------------------------------------------------------- */
 
-const RETURN_ID = "ret-chen-2025";
 
 /** What a conversation is about, in the client's words. */
 const PLAIN_SUBJECT: Record<string, string> = {
@@ -43,8 +42,8 @@ function clientVisible(items: ThreadItem[]): ThreadItem[] {
 }
 
 export default function ClientMessages() {
-  const { getReturn, threads } = useStore();
-  const ret = getReturn(RETURN_ID);
+  const { getReturn, threads, clientReturnId } = useStore();
+  const ret = getReturn(clientReturnId);
 
   const crumbs = [
     { label: "Your 2025 return", href: "/home" },
@@ -60,7 +59,7 @@ export default function ClientMessages() {
   }
 
   const myThreads = threads
-    .filter((t) => t.returnId === RETURN_ID)
+    .filter((t) => t.returnId === clientReturnId)
     .map((t) => ({ thread: t, items: clientVisible(t.items) }))
     .filter((t) => t.items.length > 0);
 
