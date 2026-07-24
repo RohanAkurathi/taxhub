@@ -382,8 +382,5 @@ export function DocumentView({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-
-export function Toasts() {
-  return null;
-}
+/* Toasts are rendered by <ToastRail/> inside Shell, so they appear once per
+   page rather than once per component that wants to announce something. */

@@ -213,25 +213,25 @@ export default function ClientHome() {
                   don&apos;t need to check back.
                 </p>
                 {upcoming.length > 0 && (
-                <div className="mt-4 border-t border-okedge pt-3">
-                  <SectionLabel>What happens next</SectionLabel>
-                  <ol className="mt-2 space-y-2">
-                    {upcoming.map((m, i) => (
-                      <li key={m.key} className="flex gap-2.5 text-sm">
-                        <span className="tnum mt-0.5 text-xs text-faint">
-                          {i + 1}
-                        </span>
-                        <span>
-                          <span className="font-medium">{m.label}</span>
-                          <span className="block text-xs text-muted">
-                            {JOURNEY_COPY[m.key].detail} ·{" "}
-                            {JOURNEY_COPY[m.key].turn.toLowerCase()}
+                  <div className="mt-4 border-t border-okedge pt-3">
+                    <SectionLabel>What happens next</SectionLabel>
+                    <ol className="mt-2 space-y-2">
+                      {upcoming.map((m, i) => (
+                        <li key={m.key} className="flex gap-2.5 text-sm">
+                          <span className="tnum mt-0.5 text-xs text-faint">
+                            {i + 1}
                           </span>
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+                          <span>
+                            <span className="font-medium">{m.label}</span>
+                            <span className="block text-xs text-muted">
+                              {JOURNEY_COPY[m.key].detail} ·{" "}
+                              {JOURNEY_COPY[m.key].turn.toLowerCase()}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 )}
               </Card>
             ) : questions.length > 0 ? (
@@ -364,7 +364,8 @@ export default function ClientHome() {
               >
                 <p className="text-sm font-medium">Your documents</p>
                 <p className="mt-0.5 text-xs text-muted">
-                  {docCount} {plural(docCount, "thing", "things")} you&apos;ve sent us
+                  {docCount} {plural(docCount, "thing", "things")}{" "}
+                  you&apos;ve sent us
                 </p>
               </Link>
               <Link href="/home/messages" className="block px-4 py-3 hover:bg-panel">
