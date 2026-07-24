@@ -91,7 +91,6 @@ export default function ClientHome() {
   const openTasks = myTasks.filter((t) => t.status !== "done");
   const nextTask = openTasks[0];
   const minutesLeft = openTasks.reduce((s, t) => s + (t.estimateMinutes ?? 0), 0);
-  const minutesTotal = myTasks.reduce((s, t) => s + (t.estimateMinutes ?? 0), 0);
 
   // A question the firm has asked and is waiting on is just as much "your
   // move" as an unfinished checklist item — so it belongs on this page, not
@@ -116,6 +115,11 @@ export default function ClientHome() {
   const dominantTask = questions.length === 0 ? nextTask : undefined;
   const listTasks = myTasks.filter((t) => t.id !== dominantTask?.id);
   const docCount = documentsFor(RETURN_ID).length;
+  // Steps still ahead. Sliced past the current milestone, because the strip
+  // above already says "you are here" — repeating it under "what happens next"
+  // reads as though the current stage hasn't started. At `filed` this is empty,
+  // which is why the block below is conditional rather than always rendered.
+  const upcoming = CLIENT_JOURNEY.slice(milestone + 1);
 
   const secondLine = questions.length
     ? `There ${plural(questions.length, "is one question", `are ${questions.length} questions`)} waiting for you below.`
@@ -208,10 +212,11 @@ export default function ClientHome() {
                   We&apos;ll email you the moment it&apos;s your turn again. You
                   don&apos;t need to check back.
                 </p>
+                {upcoming.length > 0 && (
                 <div className="mt-4 border-t border-okedge pt-3">
                   <SectionLabel>What happens next</SectionLabel>
                   <ol className="mt-2 space-y-2">
-                    {CLIENT_JOURNEY.slice(milestone).map((m, i) => (
+                    {upcoming.map((m, i) => (
                       <li key={m.key} className="flex gap-2.5 text-sm">
                         <span className="tnum mt-0.5 text-xs text-faint">
                           {i + 1}
@@ -227,6 +232,7 @@ export default function ClientHome() {
                     ))}
                   </ol>
                 </div>
+                )}
               </Card>
             ) : questions.length > 0 ? (
               <div className="space-y-3">
@@ -260,10 +266,10 @@ export default function ClientHome() {
               <div className="flex items-baseline justify-between gap-3">
                 <SectionLabel>Your checklist</SectionLabel>
                 <p className="tnum text-xs text-muted">
-                  {doneTasks.length} of {myTasks.length} done ·{" "}
+                  {doneTasks.length} of {myTasks.length} done
                   {openTasks.length
-                    ? `about ${minutesLeft} ${plural(minutesLeft, "minute", "minutes")} left`
-                    : `about ${minutesTotal} ${plural(minutesTotal, "minute", "minutes")} total`}
+                    ? ` · about ${minutesLeft} ${plural(minutesLeft, "minute", "minutes")} left`
+                    : " · nothing left to do"}
                 </p>
               </div>
               <div className="mt-2">
