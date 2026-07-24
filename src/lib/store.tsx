@@ -122,29 +122,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setToasts((cur) => cur.filter((x) => x.id !== id));
   }, []);
 
-  /** Applies a change to one line, recalculates, and refreshes readiness. */
+  /**
+   * Applies a change to one line, recalculates, and refreshes readiness.
+   *
+   * The recalculation is computed here rather than inside the setState
+   * updater: React may invoke an updater more than once, so triggering another
+   * state change from within one silently loses the result.
+   */
   const mutateLine = useCallback(
     (
       returnId: string,
       lineId: string,
       apply: (line: TaxReturn["lines"][number]) => TaxReturn["lines"][number]
     ) => {
+      const current = returns.find((r) => r.id === returnId);
+      if (!current) return;
+
+      const updated = current.lines.map((l) => (l.id === lineId ? apply(l) : l));
+      const { lines, changes } = recalculate(updated);
+
+      setLastChanges(changes);
       setReturns((cur) =>
-        cur.map((r) => {
-          if (r.id !== returnId) return r;
-          const updated = r.lines.map((l) => (l.id === lineId ? apply(l) : l));
-          const { lines, changes } = recalculate(updated);
-          setLastChanges(changes);
-          return {
-            ...r,
-            lines,
-            readiness: computeReadiness(lines, openRequestsFor(r.id).length),
-            lastActivity: new Date().toISOString(),
-          };
-        })
+        cur.map((r) =>
+          r.id === returnId
+            ? {
+                ...r,
+                lines,
+                readiness: computeReadiness(lines, openRequestsFor(r.id).length),
+                lastActivity: new Date().toISOString(),
+              }
+            : r
+        )
       );
     },
-    []
+    [returns]
   );
 
   const entry = useCallback(
@@ -375,42 +386,47 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (writeTo) {
         const { returnId, lineId, value } = writeTo;
         const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
-        setReturns((cur) =>
-          cur.map((r) => {
-            if (r.id !== returnId) return r;
-            const updated = r.lines.map((l) =>
-              l.id === lineId
+        const target = returns.find((r) => r.id === returnId);
+
+        if (target) {
+          const updated = target.lines.map((l) =>
+            l.id === lineId
+              ? {
+                  ...l,
+                  amount: Number.isFinite(numeric) ? numeric : l.amount,
+                  state: "verified" as const,
+                  aiSuggestion: undefined,
+                  flag: undefined,
+                  history: [
+                    {
+                      at: new Date().toISOString(),
+                      actor: "Client",
+                      action: "answered" as const,
+                      detail: `Confirmed by the client and written to line ${lineId}`,
+                      from: l.amount,
+                      to: Number.isFinite(numeric) ? numeric : l.amount,
+                    },
+                    ...l.history,
+                  ],
+                }
+              : l
+          );
+          const { lines, changes } = recalculate(updated);
+          setLastChanges(changes);
+          setReturns((cur) =>
+            cur.map((r) =>
+              r.id === returnId
                 ? {
-                    ...l,
-                    amount: Number.isFinite(numeric) ? numeric : l.amount,
-                    state: "verified" as const,
-                    aiSuggestion: undefined,
-                    flag: undefined,
-                    history: [
-                      {
-                        at: new Date().toISOString(),
-                        actor: "Client",
-                        action: "answered" as const,
-                        detail: `Confirmed by the client and written to line ${lineId}`,
-                        from: l.amount,
-                        to: Number.isFinite(numeric) ? numeric : l.amount,
-                      },
-                      ...l.history,
-                    ],
+                    ...r,
+                    lines,
+                    blocked: undefined,
+                    readiness: computeReadiness(lines, 0),
+                    lastActivity: new Date().toISOString(),
                   }
-                : l
-            );
-            const { lines, changes } = recalculate(updated);
-            setLastChanges(changes);
-            return {
-              ...r,
-              lines,
-              blocked: undefined,
-              readiness: computeReadiness(lines, 0),
-              lastActivity: new Date().toISOString(),
-            };
-          })
-        );
+                : r
+            )
+          );
+        }
         pushToast({
           title: "Answer applied to the return",
           detail: `Line ${lineId} now reads ${value}, and the flag is cleared.`,
