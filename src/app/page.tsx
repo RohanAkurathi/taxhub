@@ -1,65 +1,111 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { Shell } from "@/components/Shell";
+import { Button, Card, Chip, SectionLabel } from "@/components/ui";
+import { useStore } from "@/lib/store";
+
+/* ---------------------------------------------------------------------------
+   A short front door for whoever is reviewing this prototype.
+
+   It exists because someone opening the link cold has no idea which of six
+   roles they are, or which of ten problems this is meant to solve. Three
+   sentences and four entry points cost almost nothing and save that confusion.
+--------------------------------------------------------------------------- */
+
+const ENTRIES = [
+  {
+    href: "/dashboard",
+    title: "Preparer dashboard",
+    detail: "Whose move is it, across a book of 240 returns.",
+    tone: "accent" as const,
+  },
+  {
+    href: "/returns/ret-rivera-2025",
+    title: "Review a return",
+    detail:
+      "Every line traced to its source. Confirm a flagged number and watch the maths follow.",
+    tone: "accent" as const,
+  },
+  {
+    href: "/home",
+    title: "The client side",
+    detail: "What a client sees: plain language, one next action.",
+    tone: "ok" as const,
+  },
+  {
+    href: "/design-system",
+    title: "The interaction system",
+    detail: "Every state a value can be in, and what each one permits.",
+    tone: "neutral" as const,
+  },
+];
 
 export default function Home() {
+  const { setActing } = useStore();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <Shell crumbs={[{ label: "Start" }]}>
+      <div className="mx-auto max-w-3xl px-6 py-10">
+        <SectionLabel>GreenGrowth CPAs · prototype</SectionLabel>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-balance">
+          A tax platform where every number traces back to the paper it came from.
+        </h1>
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">
+          Client documents come in, an AI reads them, a preparer builds the return, a
+          reviewer checks it, and it gets filed. This prototype covers that whole path
+          from four points of view. The AI is simulated; everything you can click is real.
+        </p>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          {ENTRIES.map((e) => (
+            <Card key={e.href} className="p-4 transition-colors hover:border-accentedge">
+              <Link
+                href={e.href}
+                onClick={() =>
+                  setActing(
+                    e.href === "/home"
+                      ? { kind: "self", role: "client" }
+                      : { kind: "staff", role: "preparer" }
+                  )
+                }
+                className="block"
+              >
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold">{e.title}</h2>
+                  <Chip tone={e.tone}>open</Chip>
+                </div>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">{e.detail}</p>
+              </Link>
+            </Card>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <Card className="mt-6 p-4">
+          <SectionLabel>What is real, and what is not</SectionLabel>
+          <ul className="mt-2 space-y-2 text-sm leading-relaxed text-muted">
+            <li>
+              <strong className="text-ink">Real:</strong> the state machine on every
+              value, the audit trail, the progressive-bracket tax maths, search and
+              filtering over 240 returns, the prioritisation logic, and the permission
+              boundary between firm-internal notes and client-visible messages.
+            </li>
+            <li>
+              <strong className="text-ink">Simulated:</strong> the AI. No model is
+              called. Confidence scores, extractions and warnings are fabricated in{" "}
+              <code className="rounded bg-locksoft px-1 py-0.5 text-xs">
+                src/lib/mockAI.ts
+              </code>
+              , which defines the response contract a real extraction service would fill.
+            </li>
+          </ul>
+          <div className="mt-3">
+            <Link href="/design-system">
+              <Button size="sm">See the interaction system</Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    </Shell>
   );
 }

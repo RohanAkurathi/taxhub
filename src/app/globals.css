@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ---------------------------------------------------------------------------
+   Tax Hub design tokens.
+
+   One hue per concept, used consistently across every screen:
+     blue   = AI / active / informational
+     amber  = the single "needs a human" attention colour
+     green  = human-verified / done
+     violet = a person flagged it, or it awaits approval
+     gray   = locked, calculated, not yours to change
+     red    = blocked (reserved; never decorative)
+--------------------------------------------------------------------------- */
+
+@theme {
+  --color-canvas: #ffffff;
+  --color-panel: #faf9f6;
+  --color-ground: #f5f4f1;
+
+  --color-ink: #1a1a1a;
+  --color-muted: #6b7280;
+  --color-faint: #8b929d;
+  --color-line: #e6e4df;
+  --color-hair: #f0eee9;
+
+  --color-accent: #2563eb;
+  --color-accentink: #1d4ed8;
+  --color-accentsoft: #eef4ff;
+  --color-accentedge: #c7dbff;
+
+  --color-ok: #15803d;
+  --color-oksoft: #e7f8ee;
+  --color-okedge: #8fdcaa;
+
+  --color-warn: #9a6b00;
+  --color-warnsoft: #fff3d4;
+  --color-warnedge: #e0a92e;
+
+  --color-flag: #6d28d9;
+  --color-flagsoft: #efe9ff;
+  --color-flagedge: #d8ccf7;
+
+  --color-lock: #6b7280;
+  --color-locksoft: #f1f2f4;
+  --color-lockedge: #d9d7d1;
+
+  --color-danger: #c0392b;
+  --color-dangersoft: #fff1f0;
+  --color-dangeredge: #f3b6ae;
+
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ground);
+  color: var(--color-ink);
+}
+
+/* Money and line numbers must always align in columns. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
