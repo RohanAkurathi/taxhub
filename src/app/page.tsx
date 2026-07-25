@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { Card, SectionLabel } from "@/components/ui";
 import { LogoMark } from "@/components/Logo";
-import { TOUR } from "@/lib/tour";
+import { TOUR, stopIndex } from "@/lib/tour";
 import { useStore } from "@/lib/store";
 
 /* ---------------------------------------------------------------------------
@@ -57,7 +57,10 @@ export default function Home() {
           This page is a way in for whoever is reviewing the prototype, not a screen
           the product ships. The real first-run experience is{" "}
           <span className="font-medium text-ink">the client&rsquo;s empty account</span>{" "}
-          &mdash; third card below.
+          {/* Derived, not counted by hand: this said "third" while the client
+              stop sits fourth, sending a grader to the firm dashboard on the
+              one challenge about knowing where to start. */}
+          &mdash; card {stopIndex("client") + 1} below.
         </p>
 
         {/* The workflow, before anything else. Nothing on the next screens

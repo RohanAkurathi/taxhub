@@ -237,7 +237,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return {
           ...line,
           amount: suggested,
-          state: previous !== suggested ? "edited" : "verified",
+          /* Always verified. Confirming means the human read the source and
+             agreed with the machine — which is the definition of verified.
+             This used to badge "Edited" whenever the value moved, but the
+             design system defines edited as "a person overrode the AI", so
+             the flagship action asserted the opposite of what just happened.
+             Overriding is editLine's job, and it sets "edited" itself. */
+          state: "verified",
           aiSuggestion: undefined,
           pipeline: line.pipeline.map((p) =>
             p.actor === "ai"
@@ -476,7 +482,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       if (writeTo) {
         const { returnId, lineId, value } = writeTo;
-        const numeric = Number(String(value).replace(/[^0-9.-]/g, ""));
+        /* The client's own words take precedence over the seeded resolution, so
+           this has to survive an answer like "I paid cash" or "I'll upload it".
+           Stripping non-numerics from those leaves "", and Number("") is 0 —
+           which is finite, so the old guard let it through and wrote $0 onto
+           the return, marked the line verified and cleared the flag.
+           An answer that names no figure is still a useful answer; it just
+           isn't a value, so it is recorded without touching the amount. */
+        const digits = String(value).replace(/[^0-9.-]/g, "");
+        const numeric = digits === "" ? NaN : Number(digits);
+        const isAmount = Number.isFinite(numeric);
         const target = returns.find((r) => r.id === returnId);
 
         if (target) {
@@ -484,18 +499,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             l.id === lineId
               ? {
                   ...l,
-                  amount: Number.isFinite(numeric) ? numeric : l.amount,
-                  state: "verified" as const,
-                  aiSuggestion: undefined,
-                  flag: undefined,
+                  amount: isAmount ? numeric : l.amount,
+                  // Only a figure settles the line. Anything else leaves it
+                  // exactly as it was for the preparer to act on.
+                  state: isAmount ? ("verified" as const) : l.state,
+                  aiSuggestion: isAmount ? undefined : l.aiSuggestion,
+                  flag: isAmount ? undefined : l.flag,
                   history: [
                     {
                       at: new Date().toISOString(),
                       actor: "Client",
                       action: "answered" as const,
-                      detail: `Confirmed by the client and written to line ${lineId}`,
+                      detail: isAmount
+                        ? `Confirmed by the client and written to line ${lineId}`
+                        : `Client answered: “${value}” — no figure to write, left for the preparer`,
                       from: l.amount,
-                      to: Number.isFinite(numeric) ? numeric : l.amount,
+                      to: isAmount ? numeric : l.amount,
                     },
                     ...l.history,
                   ],
@@ -518,11 +537,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             )
           );
         }
-        pushToast({
-          title: "Answer applied to the return",
-          detail: `Line ${lineId} now reads ${value}, and the flag is cleared.`,
-          tone: "ok",
-        });
+        pushToast(
+          isAmount
+            ? {
+                title: "Answer applied to the return",
+                detail: `Line ${lineId} now reads ${value}, and the flag is cleared.`,
+                tone: "ok",
+              }
+            : {
+                title: "Answer recorded",
+                detail: `There was no figure in it, so line ${lineId} is unchanged and still with the preparer.`,
+                tone: "ok",
+              }
+        );
       } else {
         pushToast({ title: "Request resolved", tone: "ok" });
       }
@@ -555,6 +582,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const completeTask = useCallback(
     (taskId: string) => {
+      const task = tasks.find((t) => t.id === taskId);
+
       setTasks((cur) =>
         cur.map((t) =>
           t.id === taskId
@@ -562,13 +591,46 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             : t
         )
       );
+
+      /* Finishing the last required task is a real handover, so the return has
+         to move. Without this the journey strip stayed frozen on "Your
+         documents · you are here" with no ticks, directly above a panel saying
+         nothing was needed — the two halves of the same card disagreeing.
+
+         Advancing the one stored `stage` is what makes it move, rather than a
+         second progress value in the view that could drift from the firm's.
+         Optional tasks are excluded: a skipped "add any 1099s" must not hold
+         the return still. */
+      if (task) {
+        const stillOwed = tasks.filter(
+          (t) =>
+            t.returnId === task.returnId &&
+            t.id !== taskId &&
+            t.status !== "done" &&
+            !t.optional
+        );
+        if (stillOwed.length === 0) {
+          setReturns((cur) =>
+            cur.map((r) =>
+              r.id === task.returnId && r.stage === "docs_pending"
+                ? {
+                    ...r,
+                    stage: "extracting" as const,
+                    lastActivity: new Date().toISOString(),
+                  }
+                : r
+            )
+          );
+        }
+      }
+
       pushToast({
         title: "Got it — thank you",
         detail: "We'll take it from here and let you know if we need anything else.",
         tone: "ok",
       });
     },
-    [pushToast]
+    [tasks, pushToast]
   );
 
   /** Puts a line back exactly as it stood, and recalculates around it. */

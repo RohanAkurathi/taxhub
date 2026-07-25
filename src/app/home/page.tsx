@@ -17,7 +17,13 @@ import {
   clientMilestoneIndex,
   formatMoney,
 } from "@/lib/design";
-import { documentsFor, relativeTime, tasksFor } from "@/lib/mockData";
+import {
+  FILING_DEADLINE,
+  daysUntil,
+  documentsFor,
+  relativeTime,
+  tasksFor,
+} from "@/lib/mockData";
 import { useStore } from "@/lib/store";
 import type {
   ClientTask,
@@ -54,6 +60,11 @@ const JOURNEY_COPY: Record<Stage, { turn: string; detail: string }> = {
   ready_to_file: { turn: "Your turn", detail: "You sign, then we send it in" },
   filed: { turn: "All done", detail: "Your return is with the IRS" },
 };
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 const TASK_CTA: Record<ClientTask["kind"], string> = {
   upload: "Add your file",
@@ -192,6 +203,11 @@ export default function ClientHome() {
   // reads as though the current stage hasn't started. At `filed` this is empty,
   // which is why the block below is conditional rather than always rendered.
   const upcoming = CLIENT_JOURNEY.slice(milestone + 1);
+  const daysToDeadline = daysUntil(FILING_DEADLINE);
+  // Written out rather than toLocaleDateString: this renders on the server and
+  // again in the browser, and a locale difference between the two would be a
+  // hydration mismatch.
+  const deadlineLabel = `${MONTHS[FILING_DEADLINE.getMonth()]} ${FILING_DEADLINE.getDate()}`;
   const history = buildHistory(
     documentsFor(clientReturnId),
     myTasks,
@@ -230,6 +246,17 @@ export default function ClientHome() {
           Your preparer, {ret.preparerName}, is looking after it · last update{" "}
           {relativeTime(ret.lastActivity)}
         </p>
+        {/* The deadline is the only urgency a taxpayer actually feels — "about
+            7 minutes left" measures effort, not time. It is deliberately absent
+            once nothing is owed: counting down at someone who has already done
+            their part is nagging, not information. */}
+        {!nothingOutstanding && (
+          <p className="mt-1 text-sm">
+            <span className={daysToDeadline <= 21 ? "font-medium text-warn" : "text-muted"}>
+              Filing deadline {deadlineLabel} · {daysToDeadline} days away
+            </span>
+          </p>
+        )}
 
         {/* Journey ------------------------------------------------------ */}
         <Card className="mt-6 p-5">

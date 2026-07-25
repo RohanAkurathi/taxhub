@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { use, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, use, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import {
   Avatar,
@@ -142,8 +143,21 @@ const REQUEST_STATUS: Record<
 // would fail its first typecheck before it had ever been run.
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  // useSearchParams needs a Suspense boundary above it, same as the return page.
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-muted">Loading conversation…</div>}>
+      <Conversation id={id} />
+    </Suspense>
+  );
+}
+
+function Conversation({ id }: { id: string }) {
   const { threads, getReturn, role, sendMessage, resolveRequest, remindRequest } =
     useStore();
+  // Which conversation the visitor arrived to talk about. Set by the inspector's
+  // "Ask the client" / "Discuss" links so a reply about line 2b does not get
+  // posted under whichever thread happened to be most recently active.
+  const about = useSearchParams().get("about");
 
   const ret = getReturn(id);
   const summary = returnSummaryById(id);
@@ -373,6 +387,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             <Composer
               threads={returnThreads}
               firstName={firstName}
+              preferThreadId={about}
               onSend={(threadId, bodyText, visibility) => {
                 sendMessage(threadId, bodyText, visibility);
                 // Let the new message render, then bring it into view.
@@ -811,18 +826,25 @@ function AnchorChip({
 function Composer({
   threads,
   firstName,
+  preferThreadId,
   onSend,
 }: {
   threads: Thread[];
   firstName: string;
+  /** The thread the visitor came here to talk about, from `?about=`. */
+  preferThreadId?: string | null;
   onSend: (threadId: string, body: string, visibility: Visibility) => void;
 }) {
   const [tab, setTab] = useState<Visibility>("client");
   const [body, setBody] = useState("");
-  // A return can have several conversations anchored to different lines. The
-  // reply defaults to the most recently active one, and the anchor is always
-  // named — you can never post into a context you cannot see.
-  const [threadId, setThreadId] = useState(() => mostRecent(threads).id);
+  // A return can have several conversations anchored to different lines. If the
+  // visitor arrived from a specific line, reply there; otherwise fall back to
+  // the most recently active thread. The anchor is always named either way —
+  // you can never post into a context you cannot see.
+  const [threadId, setThreadId] = useState(
+    () =>
+      threads.find((t) => t.id === preferThreadId)?.id ?? mostRecent(threads).id
+  );
 
   const internal = tab === "internal";
 

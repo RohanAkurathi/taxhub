@@ -34,6 +34,13 @@ import {
    feel like a property of the product rather than a feature you visit.
 --------------------------------------------------------------------------- */
 
+/** A link to the conversation, naming which thread it should open on. */
+function threadHref(returnId: string, threadId?: string) {
+  return threadId
+    ? `/returns/${returnId}/messages?about=${threadId}`
+    : `/returns/${returnId}/messages`;
+}
+
 export function Inspector({
   ret,
   line,
@@ -328,7 +335,7 @@ export function Inspector({
                 <Button size="sm" onClick={() => setSendingBack(true)}>
                   Send back to {ret.preparerName.split(" ")[0]}
                 </Button>
-                <Link href={`/returns/${ret.id}/messages`}>
+                <Link href={threadHref(ret.id, line.threadId)}>
                   <Button variant="quiet" size="sm">
                     Discuss
                   </Button>
@@ -433,7 +440,10 @@ export function Inspector({
               </Button>
             ) : null}
 
-            <Link href={`/returns/${ret.id}/messages`}>
+            {/* Carry the line's own conversation across. Without it the
+                composer opened on whichever thread was most recently active,
+                so "Ask the client" about line 2b could post under line 12b. */}
+            <Link href={threadHref(ret.id, line.threadId)}>
               <Button variant="quiet" size="sm">
                 Ask the client
               </Button>
@@ -441,7 +451,10 @@ export function Inspector({
           </div>
         )}
 
-        {!isReviewer && confirmBlocked && !editing && (
+        {/* Gated on the suggestion, not just on confidence: confirming does not
+            clear `confidence`, so after the flagship demo this sentence used to
+            sit there explaining a Confirm button that no longer existed. */}
+        {!isReviewer && confirmBlocked && line.aiSuggestion && !editing && (
           <p className="mt-2 text-[11px] leading-relaxed text-warn">
             This reading is uncertain, so confirming is disabled until you have looked at
             the source. Click the highlighted value on the document above.
@@ -759,7 +772,7 @@ function ThreadPreview({ threadId, returnId }: { threadId: string; returnId: str
           );
         })}
       </ul>
-      <Link href={`/returns/${returnId}/messages`}>
+      <Link href={threadHref(returnId, threadId)}>
         <Button size="sm" className="mt-2">
           Open the conversation {open > 0 && `· ${open} open`}
         </Button>
