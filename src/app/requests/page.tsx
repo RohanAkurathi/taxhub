@@ -19,7 +19,7 @@ import { agingTone, returnSummaryById } from "@/lib/mockVolume";
 import type { Owner, RequestStatus, ThreadAnchor, TaxReturn, ReturnLine } from "@/lib/types";
 
 /* ---------------------------------------------------------------------------
-   Open items — the firm-wide answer to "what is outstanding, and who owes it".
+   Follow-ups — the firm-wide answer to "what is outstanding, and who owes it".
 
    The failure mode this screen is built against is the generic inbox: a stream
    of messages that is read rather than worked, where an item leaves the list
