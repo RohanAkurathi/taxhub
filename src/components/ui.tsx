@@ -308,79 +308,107 @@ export function DocumentView({
   highlightBoxId?: string;
   onBoxClick?: (boxId: string) => void;
 }) {
-  return (
-    <div className="rounded-lg border-2 border-lockedge bg-canvas p-4">
-      <div className="mb-1 flex items-baseline justify-between gap-2">
-        <h5 className="text-sm font-semibold">{doc.title}</h5>
-        <span className="text-xs text-faint">{doc.taxYear}</span>
-      </div>
-      <p className="mb-3 text-xs text-muted">{doc.issuer}</p>
+  const interactive = Boolean(onBoxClick);
 
-      <div className="grid grid-cols-2 gap-1.5">
+  return (
+    <figure className="overflow-hidden rounded-sm border border-lockedge bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      {/* Masthead, the way a real form carries one. */}
+      <figcaption className="border-b-2 border-ink/80 px-3.5 pb-2 pt-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[13px] font-semibold leading-tight tracking-tight">
+            {doc.title}
+          </span>
+          <span className="tnum shrink-0 text-[11px] text-muted">{doc.taxYear}</span>
+        </div>
+        <span className="mt-0.5 block text-[11px] text-muted">{doc.issuer}</span>
+      </figcaption>
+
+      {/*
+        Ruled boxes that share their borders, the way the boxes on a paper tax
+        form do. An earlier version used rounded, floating, individually
+        outlined cards, which reads as a set of options to choose between — the
+        document looked like a form control instead of a form.
+      */}
+      <div className="grid grid-cols-2 gap-px bg-lockedge/70">
         {doc.boxes.map((box) => {
           const isHighlight = box.id === highlightBoxId;
-          const interactive = Boolean(onBoxClick);
-          return (
-            <div
-              key={box.id}
-              onClick={interactive ? () => onBoxClick!(box.id) : undefined}
-              role={interactive ? "button" : undefined}
-              tabIndex={interactive ? 0 : undefined}
-              onKeyDown={
-                interactive
-                  ? (e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onBoxClick!(box.id);
-                      }
-                    }
-                  : undefined
-              }
-              className={cx(
-                "rounded border px-2 py-1.5 transition-colors",
-                box.wide && "col-span-2",
-                interactive && "cursor-pointer hover:border-accentedge",
-                isHighlight && box.uncertain
-                  ? "border-warnedge bg-warnsoft outline-2 outline-warnedge"
-                  : isHighlight
-                  ? "border-accentedge bg-accentsoft outline-2 outline-accent"
-                  : box.uncertain
-                  ? "border-warnedge bg-warnsoft/40"
-                  : "border-lockedge bg-canvas"
+          const common = cx(
+            "relative block w-full bg-white px-3 py-2 text-left",
+            box.wide && "col-span-2",
+            interactive && "cursor-pointer hover:bg-accentsoft/50",
+            // Emphasis reads as a highlighter mark over paper, never as a
+            // selected control: a wash and a margin rule, no blue ring.
+            isHighlight && box.uncertain && "bg-warnsoft",
+            isHighlight && !box.uncertain && "bg-[#fdf6d8]",
+            !isHighlight && box.uncertain && "bg-warnsoft/40"
+          );
+
+          const inner = (
+            <>
+              {isHighlight && (
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    "absolute inset-y-0 left-0 w-[3px]",
+                    box.uncertain ? "bg-warnedge" : "bg-[#d9b625]"
+                  )}
+                />
               )}
-            >
-              <span className="block text-[10px] uppercase tracking-wide text-faint">
+              <span className="block text-[9.5px] font-medium uppercase leading-tight tracking-[0.06em] text-muted">
                 {box.label}
               </span>
-              <span className="tnum text-sm font-medium">{box.value}</span>
+              <span className="tnum mt-0.5 block text-[13px] leading-snug text-ink">
+                {box.value}
+              </span>
               {box.uncertain && (
-                <span className="ml-1.5 text-[10px] font-semibold text-warn">
-                  unclear
+                <span className="mt-0.5 block text-[10px] font-medium text-warn">
+                  could not be read cleanly
                 </span>
               )}
+            </>
+          );
+
+          return interactive ? (
+            <button
+              key={box.id}
+              type="button"
+              onClick={() => onBoxClick!(box.id)}
+              title="Check this figure against the return"
+              className={common}
+            >
+              {inner}
+            </button>
+          ) : (
+            <div key={box.id} className={common}>
+              {inner}
             </div>
           );
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-hair pt-2 text-xs text-faint">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-lockedge px-3.5 py-2 text-[11px] text-muted">
         <span>
           Uploaded by {doc.uploadedBy} · {doc.pages} page{doc.pages > 1 ? "s" : ""}
         </span>
-        {doc.scanQuality === "low" && <Chip tone="warn">Low scan quality</Chip>}
+        {doc.scanQuality === "low" && (
+          <span className="font-medium text-warn">· low scan quality</span>
+        )}
       </div>
+
       {doc.notice && (
-        <p className="mt-2 rounded-md bg-warnsoft/60 px-2.5 py-1.5 text-xs text-warn">
+        <p className="border-t border-lockedge bg-warnsoft/50 px-3.5 py-2 text-[11px] leading-relaxed text-warn">
           {doc.notice}
         </p>
       )}
-      <p className="mt-2 text-[11px] text-faint">
+
+      <p className="border-t border-lockedge px-3.5 py-2 text-[11px] leading-relaxed text-faint">
         The uploaded file is never modified. Every correction is stored as a separate,
         reversible change.
       </p>
-    </div>
+    </figure>
   );
 }
+
 
 /* Toasts are rendered by <ToastRail/> inside Shell, so they appear once per
    page rather than once per component that wants to announce something. */
