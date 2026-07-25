@@ -2,13 +2,16 @@
 
 A prototype client-and-CPA tax platform, built for the GreenGrowth AI Engineer case study.
 
-**Live demo:** _(add your Vercel URL here)_ · **Walkthrough video:** _(add link here)_
+**Live demo: [taxhub-chi.vercel.app](https://taxhub-chi.vercel.app)** · **Walkthrough video:** _(add link here)_
 
 ---
 
 ## Run it
 
-One command. Node 20 or newer is the only requirement.
+Nothing to install — it is deployed at
+**[taxhub-chi.vercel.app](https://taxhub-chi.vercel.app)**.
+
+To run it locally instead — one command, Node 20 or newer the only requirement:
 
 ```bash
 git clone https://github.com/RohanAkurathi/taxhub.git && cd taxhub && npm run setup
