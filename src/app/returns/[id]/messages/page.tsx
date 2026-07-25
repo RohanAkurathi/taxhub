@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useMemo, useState } from "react";
+import { use, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import {
   Avatar,
@@ -148,6 +148,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   // A client can only ever be in the client's view, so there is nothing to
   // toggle for them — the control is simply absent rather than disabled.
   const [previewClient, setPreviewClient] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
   const clientView = previewClient || role === "client";
 
   const returnThreads = useMemo(
@@ -356,6 +357,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           ))}
         </div>
 
+        {/* The end of the thread, so a new message can be scrolled to. */}
+        <div ref={endRef} />
+
         {/* Composer ------------------------------------------------------ */}
         <div className="mt-7">
           {clientView ? (
@@ -364,7 +368,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             <Composer
               threads={returnThreads}
               firstName={firstName}
-              onSend={sendMessage}
+              onSend={(threadId, bodyText, visibility) => {
+                sendMessage(threadId, bodyText, visibility);
+                // Let the new message render, then bring it into view.
+                requestAnimationFrame(() =>
+                  endRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "end",
+                  })
+                );
+              }}
             />
           )}
         </div>

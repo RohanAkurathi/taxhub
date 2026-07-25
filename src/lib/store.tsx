@@ -43,7 +43,10 @@ import type { ClientTask } from "./types";
 --------------------------------------------------------------------------- */
 
 export type ActingContext =
-  | { kind: "staff"; role: Extract<Role, "preparer" | "reviewer" | "admin"> }
+  | {
+      kind: "staff";
+      role: Extract<Role, "preparer" | "seasonal" | "reviewer" | "admin">;
+    }
   /**
    * The client experience. `as` names whose account is being viewed:
    *   "reyes" — Jordan's own return: a firm employee who is also a client of
@@ -51,11 +54,16 @@ export type ActingContext =
    *   "chen"  — Sarah's return, several weeks in, so the same screens can be
    *             seen once onboarding is behind you.
    */
-  | { kind: "self"; role: "client"; as: "reyes" | "chen" };
+  | {
+      kind: "self";
+      role: Extract<Role, "client" | "business_owner">;
+      as: "reyes" | "chen" | "petrov";
+    };
 
 export const CLIENT_ACCOUNTS = {
   reyes: { returnId: "ret-reyes-2025", name: "Jordan Reyes" },
   chen: { returnId: "ret-chen-2025", name: "Sarah Chen" },
+  petrov: { returnId: "ret-petrov-2025", name: "Elena Petrov" },
 } as const;
 
 interface Toast {

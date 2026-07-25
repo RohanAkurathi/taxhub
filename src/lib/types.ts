@@ -14,7 +14,23 @@
       review, and trust possible.
 --------------------------------------------------------------------------- */
 
-export type Role = "client" | "preparer" | "reviewer" | "admin";
+/*
+ * The six the platform serves. Individual taxpayers and business owners are
+ * both clients of the firm, but they see different products — one has a W-2,
+ * the other has entities, K-1s and a schedule of expenses — so they are
+ * separate roles rather than one "client" with a flag on it.
+ *
+ * Seasonal staff are the interesting case: a preparer whose authority stops
+ * short of filing. That restriction is what makes the role architecture prove
+ * itself, because a limit has to be communicated without an error message.
+ */
+export type Role =
+  | "client"
+  | "business_owner"
+  | "preparer"
+  | "seasonal"
+  | "reviewer"
+  | "admin";
 
 /** Who a piece of work is waiting on. Drives status, dashboard, and requests. */
 export type Owner = "client" | "preparer" | "reviewer" | "system" | "none";

@@ -235,12 +235,32 @@ export interface RoleMeta {
   /** Sidebar destinations available to this role. */
   nav: { href: string; label: string; icon: string }[];
   home: string;
+  /**
+   * What this role cannot do, said plainly.
+   *
+   * A limit a person discovers by being refused is a bad limit. Stating it in
+   * the shell means nobody reaches for something they were never going to be
+   * allowed to have.
+   */
+  cannot?: string;
 }
 
 export const ROLE: Record<Role, RoleMeta> = {
   client: {
     label: "Client",
     description: "Someone whose return the firm is preparing",
+    badge: "bg-oksoft text-ok border-okedge",
+    home: "/home",
+    nav: [
+      { href: "/home", label: "Home", icon: "home" },
+      { href: "/home/documents", label: "My documents", icon: "doc" },
+      { href: "/home/messages", label: "Messages", icon: "chat" },
+      { href: "/home/return", label: "My return", icon: "grid" },
+    ],
+  },
+  business_owner: {
+    label: "Business owner",
+    description: "A client whose return is an entity, not a paycheck",
     badge: "bg-oksoft text-ok border-okedge",
     home: "/home",
     nav: [
@@ -258,8 +278,21 @@ export const ROLE: Record<Role, RoleMeta> = {
     nav: [
       { href: "/dashboard", label: "Dashboard", icon: "home" },
       { href: "/returns", label: "Returns", icon: "grid" },
-      { href: "/requests", label: "Open items", icon: "chat" },
+      { href: "/requests", label: "Follow-ups", icon: "chat" },
       { href: "/design-system", label: "Design system", icon: "swatch" },
+    ],
+  },
+  seasonal: {
+    label: "Seasonal preparer",
+    description: "Prepares returns during the season, but cannot file them",
+    badge: "bg-accentsoft text-accentink border-accentedge",
+    home: "/dashboard",
+    cannot:
+      "You can prepare and edit returns, but filing and client billing stay with permanent staff.",
+    nav: [
+      { href: "/dashboard", label: "Dashboard", icon: "home" },
+      { href: "/returns", label: "Returns", icon: "grid" },
+      { href: "/requests", label: "Follow-ups", icon: "chat" },
     ],
   },
   reviewer: {
@@ -270,19 +303,19 @@ export const ROLE: Record<Role, RoleMeta> = {
     nav: [
       { href: "/dashboard", label: "Dashboard", icon: "home" },
       { href: "/returns", label: "Returns", icon: "grid" },
-      { href: "/requests", label: "Open items", icon: "chat" },
+      { href: "/requests", label: "Follow-ups", icon: "chat" },
       { href: "/design-system", label: "Design system", icon: "swatch" },
     ],
   },
   admin: {
-    label: "Firm admin",
-    description: "Sees the whole firm's workload",
+    label: "Firm administrator",
+    description: "Watches the whole firm's workload rather than any one return",
     badge: "bg-locksoft text-lock border-lockedge",
     home: "/dashboard",
     nav: [
       { href: "/dashboard", label: "Dashboard", icon: "home" },
       { href: "/returns", label: "Returns", icon: "grid" },
-      { href: "/requests", label: "Open items", icon: "chat" },
+      { href: "/requests", label: "Follow-ups", icon: "chat" },
       { href: "/design-system", label: "Design system", icon: "swatch" },
     ],
   },

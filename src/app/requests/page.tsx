@@ -171,7 +171,7 @@ export default function OpenItemsPage() {
 
   return (
     <Shell
-      crumbs={[{ label: "Open items" }]}
+      crumbs={[{ label: "Follow-ups" }]}
       right={
         <Chip tone={items.length ? "warn" : "ok"}>
           <span className="tnum">{items.length}</span> open
@@ -180,11 +180,20 @@ export default function OpenItemsPage() {
     >
       <div className="mx-auto max-w-5xl px-6 py-8">
         <SectionLabel>{isReviewer ? "Your review work" : "Across the firm"}</SectionLabel>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Open items</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Follow-ups</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
           {isReviewer
             ? "Not an inbox. What is waiting on your sign-off, and what you have sent back — plus, for context, what the preparers are still chasing."
             : "Not an inbox. Every row is a piece of work with an owner, an age and one next action — it leaves this list when the work is done, not when someone reads it."}
+        </p>
+
+        {/* The convention, said out loud in both views. A rule people only
+            discover by bumping into it is a rule that gets broken. */}
+        <p className="mt-2 max-w-2xl rounded-lg border border-line bg-panel px-3.5 py-2 text-xs leading-relaxed text-muted">
+          <span className="font-medium text-ink">Who talks to the client:</span>{" "}
+          {isReviewer
+            ? "the preparer does. You can see what they are chasing, and you can go over their head if something is genuinely urgent — but the default is to ask them, so the client hears one voice."
+            : "you do. Reviewers can see what you are chasing and will normally raise things with you rather than the client, so your client hears one voice."}
         </p>
 
         {/* Summary strip -------------------------------------------------- */}
@@ -250,7 +259,7 @@ export default function OpenItemsPage() {
                 <SentBackGroup entries={sentBack} />
                 <Group
                   title="The preparer is chasing a client"
-                  caption="Context only. These are why a return is stuck; the preparer owns the client relationship, so the next move is not yours."
+                  caption="Why a return is stuck. The preparer owns the relationship, so the usual move is to nudge them — the direct route is there if it is genuinely urgent."
                   items={onClients}
                   expanded={expanded}
                   setExpanded={setExpanded}
@@ -557,7 +566,18 @@ function Row({
                 In read-only mode the row is context — someone else owns the
                 next move, so offering a button would be offering a lie. */}
             {readOnly ? (
-              <span className="text-xs text-faint">the preparer is chasing this</span>
+              /* Not a dead end: the usual move is to nudge the preparer, and
+                 the direct route stays available but visibly exceptional. */
+              <>
+                <Button size="sm" onClick={() => onRemind(item.threadId, item.requestId)}>
+                  Nudge the preparer
+                </Button>
+                <Link href={`/returns/${item.returnId}/messages`}>
+                  <Button size="sm" variant="quiet" title="Goes around the preparer — use only if it is urgent">
+                    Contact the client directly
+                  </Button>
+                </Link>
+              </>
             ) : item.owner === "client" ? (
               <Button
                 size="sm"

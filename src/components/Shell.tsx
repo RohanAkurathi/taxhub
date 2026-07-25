@@ -5,9 +5,10 @@ import { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ROLE } from "@/lib/design";
-import { useStore } from "@/lib/store";
+import { CLIENT_ACCOUNTS, useStore } from "@/lib/store";
 import { Avatar, Chip, cx } from "./ui";
 import { LogoMark } from "./Logo";
+import { TourBar } from "./TourBar";
 
 /* ---------------------------------------------------------------------------
    The application shell.
@@ -195,7 +196,7 @@ export function Shell({
             {viewingAsSelf
               ? acting.as === "reyes"
                 ? "Myself (client)"
-                : "Sarah Chen (client)"
+                : `${CLIENT_ACCOUNTS[acting.as].name.split(" ")[0]} (${ROLE[role].label.toLowerCase()})`
               : ROLE[role].label}
             <span aria-hidden="true">▾</span>
           </button>
@@ -210,18 +211,16 @@ export function Shell({
               </p>
               {(
                 [
+                  { role: "preparer", detail: "Builds returns from client documents" },
                   {
-                    kind: "staff",
-                    role: "preparer",
-                    title: "Preparer",
-                    detail: "Build returns from client documents",
+                    role: "seasonal",
+                    detail: "Prepares during the season · cannot file",
                   },
                   {
-                    kind: "staff",
                     role: "reviewer",
-                    title: "Reviewer",
-                    detail: `${reviewCount} return${reviewCount === 1 ? "" : "s"} awaiting your approval`,
+                    detail: `${reviewCount} awaiting your approval`,
                   },
+                  { role: "admin", detail: "The whole firm's workload" },
                 ] as const
               ).map((opt) => (
                 <button
@@ -233,48 +232,63 @@ export function Shell({
                     !viewingAsSelf && role === opt.role && "bg-accentsoft"
                   )}
                 >
-                  <span className="font-medium">{opt.title}</span>
+                  <span className="font-medium">{ROLE[opt.role].label}</span>
                   <span className="block text-xs text-muted">{opt.detail}</span>
                 </button>
               ))}
 
-              {/* The firm employee who is also a client of the firm. */}
+              {/* Two kinds of client: a paycheck and an entity. They are not
+                  the same product, so they are not the same role. */}
               <div className="my-1 border-t border-hair" />
               <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-faint">
                 As a client
               </p>
-              <button
-                role="menuitem"
-                onClick={() => switchTo({ kind: "self", role: "client", as: "reyes" })}
-                className={cx(
-                  "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
-                  viewingAsSelf && acting.as === "reyes" && "bg-oksoft"
-                )}
-              >
-                <span className="flex items-center gap-2 font-medium">
-                  My own tax return
-                  <Chip tone="ok">brand new</Chip>
-                </span>
-                <span className="block text-xs text-muted">
-                  You are a client of the firm too. Nothing uploaded yet — this is day one.
-                </span>
-              </button>
-              <button
-                role="menuitem"
-                onClick={() => switchTo({ kind: "self", role: "client", as: "chen" })}
-                className={cx(
-                  "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
-                  viewingAsSelf && acting.as === "chen" && "bg-oksoft"
-                )}
-              >
-                <span className="flex items-center gap-2 font-medium">
-                  Sarah Chen&rsquo;s view
-                  <Chip tone="accent">weeks in</Chip>
-                </span>
-                <span className="block text-xs text-muted">
-                  The same screens once onboarding is behind you
-                </span>
-              </button>
+              {(
+                [
+                  {
+                    as: "reyes",
+                    role: "client",
+                    title: "My own tax return",
+                    tag: "brand new",
+                    tone: "ok" as const,
+                    detail: "You are a client of the firm too — nothing uploaded yet",
+                  },
+                  {
+                    as: "chen",
+                    role: "client",
+                    title: "Sarah Chen",
+                    tag: "individual",
+                    tone: "ok" as const,
+                    detail: "An individual taxpayer, weeks into the process",
+                  },
+                  {
+                    as: "petrov",
+                    role: "business_owner",
+                    title: "Elena Petrov",
+                    tag: "business",
+                    tone: "accent" as const,
+                    detail: "A business owner — entity return, K-1s, 40 documents",
+                  },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.as}
+                  role="menuitem"
+                  onClick={() =>
+                    switchTo({ kind: "self", role: opt.role, as: opt.as })
+                  }
+                  className={cx(
+                    "w-full rounded-md px-2 py-2 text-left text-sm hover:bg-locksoft",
+                    viewingAsSelf && acting.as === opt.as && "bg-oksoft"
+                  )}
+                >
+                  <span className="flex items-center gap-2 font-medium">
+                    {opt.title}
+                    <Chip tone={opt.tone}>{opt.tag}</Chip>
+                  </span>
+                  <span className="block text-xs text-muted">{opt.detail}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -287,7 +301,9 @@ export function Shell({
         <div className="flex items-center gap-2 border-b border-okedge bg-oksoft px-4 py-1.5 text-xs font-medium text-ok">
           {acting.kind === "self" && acting.as === "reyes"
             ? "You are viewing your own return as a client. Firm tools are hidden."
-            : "You are seeing exactly what Sarah Chen sees. Firm tools are hidden."}
+            : `You are seeing exactly what ${
+                acting.kind === "self" ? CLIENT_ACCOUNTS[acting.as].name : ""
+              } sees. Firm tools are hidden.`}
           <button
             onClick={() => switchTo({ kind: "staff", role: "preparer" })}
             className="underline hover:no-underline"
@@ -379,15 +395,26 @@ export function Shell({
 
           {/* Anchored to the bottom of the rail, not trailing off down an
               arbitrarily long page. */}
-          <p className="shrink-0 border-t border-line px-5 py-3 text-[11px] leading-relaxed text-faint">
-            {viewingAsSelf
-              ? "As a client you see four rooms. Nothing here hints at tools you cannot open."
-              : `${ROLE[role].label}: ${ROLE[role].description.toLowerCase()}.`}
-          </p>
+          <div className="shrink-0 border-t border-line px-5 py-3">
+            <p className="text-[11px] leading-relaxed text-faint">
+              {viewingAsSelf
+                ? "As a client you see four rooms. Nothing here hints at tools you cannot open."
+                : `${ROLE[role].label}: ${ROLE[role].description.toLowerCase()}.`}
+            </p>
+            {ROLE[role].cannot && (
+              <p className="mt-1.5 border-t border-hair pt-1.5 text-[11px] leading-relaxed text-warn">
+                {ROLE[role].cannot}
+              </p>
+            )}
+          </div>
         </aside>
 
-        {/* Only the content scrolls, so the frame never drifts off screen. */}
-        <main className="app-scroll min-w-0 flex-1">{children}</main>
+        {/* Only the content scrolls, so the frame never drifts off screen,
+            and the tour handrail sits below it rather than over it. */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <main className="app-scroll min-w-0 flex-1">{children}</main>
+          <TourBar />
+        </div>
       </div>
 
       <ToastRail />
