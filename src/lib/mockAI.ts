@@ -6,9 +6,9 @@
    This module exists to pin down the *contract* between the product and a real
    extraction service, so the UI can be built and judged against a realistic
    response shape. In production the functions below would call a document-
-   understanding model (Claude with a vision/tool-use pass over the scanned
-   page, or a dedicated OCR + structured-extraction pipeline); the return types
-   would not change.
+   understanding model — a vision-capable LLM making a structured-output pass
+   over the scanned page, or a dedicated OCR + extraction pipeline. Either way
+   the return types below would not change.
 
    The design decisions this file encodes are real, and they are the ones worth
    discussing:
