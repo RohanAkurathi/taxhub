@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Avatar, Button, Card, Chip, EmptyState } from "@/components/ui";
-import { relativeTime } from "@/lib/mockData";
+import { relativeTime, roleLabelForName } from "@/lib/mockData";
 import { useStore } from "@/lib/store";
 import type { Thread, ThreadItem } from "@/lib/types";
 
@@ -156,6 +156,7 @@ function Item({
           <p className="flex items-baseline gap-2 text-sm font-medium">
             {mine ? "You" : item.author}
             <span className="text-xs font-normal text-faint">
+              {!mine && <>{roleLabelForName(item.author).toLowerCase()} · </>}
               {relativeTime(item.at)}
             </span>
           </p>
@@ -200,7 +201,9 @@ function Item({
       <div className="flex flex-wrap items-center gap-2">
         <Chip tone="warn">Your turn</Chip>
         <span className="text-xs text-faint">
-          {item.askedBy} asked {relativeTime(item.askedAt)}
+          {/* The client has no reason to know who "Jordan" is. */}
+          {item.askedBy} ({roleLabelForName(item.askedBy).toLowerCase()}) asked{" "}
+          {relativeTime(item.askedAt)}
         </span>
       </div>
       <p className="mt-2 text-sm font-semibold leading-snug">{item.title}</p>

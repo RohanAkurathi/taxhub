@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { PipelineStep, ReturnLine, TaxReturn } from "@/lib/types";
-import { FIELD_STATE, formatMoney } from "@/lib/design";
-import { documentById, relativeTime } from "@/lib/mockData";
+import { FIELD_STATE, ROLE, formatMoney } from "@/lib/design";
+import { documentById, relativeTime, roleLabelForName } from "@/lib/mockData";
 import { downstreamOf } from "@/lib/calc";
 import { getWarningsForLine } from "@/lib/mockAI";
 import { useStore } from "@/lib/store";
@@ -190,9 +190,12 @@ export function Inspector({
               .map((p) => (
                 <li key={p.actor} className="text-[11px] text-muted">
                   <span className="font-medium text-ink">{p.actorName}</span>
-                  {p.actor !== "ai" && (
-                    <span className="text-faint"> · {p.actor}</span>
-                  )}{" "}
+                  {/* Was printing the raw enum, so this read "· preparer" in
+                      lowercase machine-speak. Same source, human wording. */}
+                  <span className="text-faint">
+                    {" · "}
+                    {p.actor === "ai" ? "Automated" : ROLE[p.actor].label}
+                  </span>{" "}
                   — {p.note}
                 </li>
               ))}
@@ -483,7 +486,9 @@ export function Inspector({
               <li key={i} className="border-l-2 border-hair pl-2.5 text-xs">
                 <p className="leading-snug">{h.detail}</p>
                 <p className="mt-0.5 text-[11px] text-faint">
-                  {h.actor} · {relativeTime(h.at)}
+                  {h.actor}{" "}
+                  <span className="opacity-80">({roleLabelForName(h.actor)})</span> ·{" "}
+                  {relativeTime(h.at)}
                   {h.from !== undefined && h.to !== undefined && h.from !== null && (
                     <>
                       {" "}
@@ -527,8 +532,14 @@ function PipelineChip({ step, showArrow }: { step: PipelineStep; showArrow: bool
     waiting: "·",
     flagged: "⚑",
   }[step.status];
-  const short =
-    step.actor === "ai" ? "AI" : step.actorName.split(" ")[0];
+  /* A first name on its own is only meaningful to someone who already knows
+     the team, and this row is precisely where a reader is working out who is
+     accountable for a number. So the role rides with the name everywhere it
+     appears — it was previously in a `title` tooltip, which is to say nowhere.
+     `actor` is already the role, so this cannot drift from the pipeline data. */
+  const short = step.actor === "ai" ? "AI" : step.actorName.split(" ")[0];
+  const roleLabel = step.actor === "ai" ? "Automated" : ROLE[step.actor].label;
+  const isAI = step.actor === "ai";
 
   return (
     <>
@@ -538,13 +549,16 @@ function PipelineChip({ step, showArrow }: { step: PipelineStep; showArrow: bool
         </span>
       )}
       <span
-        title={`${step.actorName}: ${step.note ?? step.status}`}
+        title={`${isAI ? "AI" : step.actorName} (${roleLabel}): ${step.note ?? step.status}`}
         className={cx(
-          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+          "inline-flex flex-col items-start rounded-lg px-2.5 py-1 leading-tight",
           tone
         )}
       >
-        {short} <span aria-hidden="true">{glyph}</span>
+        <span className="flex items-center gap-1.5 text-xs font-medium">
+          {short} <span aria-hidden="true">{glyph}</span>
+        </span>
+        <span className="text-[10px] font-medium opacity-70">{roleLabel}</span>
       </span>
     </>
   );
@@ -715,6 +729,10 @@ function ThreadPreview({ threadId, returnId }: { threadId: string; returnId: str
                 <span className="font-medium">
                   {item.visibility === "internal" && "⊘ "}
                   {item.author}
+                </span>
+                <span className="opacity-70">
+                  {" "}
+                  ({roleLabelForName(item.author).toLowerCase()})
                 </span>
                 : {item.body.slice(0, 90)}
                 {item.body.length > 90 && "…"}

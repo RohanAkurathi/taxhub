@@ -9,6 +9,7 @@ import {
   confidenceBand,
   gradeClasses,
 } from "@/lib/design";
+import { roleLabelForName } from "@/lib/mockData";
 
 /* ---------------------------------------------------------------------------
    Shared primitives.
@@ -474,7 +475,8 @@ export function DocumentView({
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-lockedge px-3.5 py-2 text-[11px] text-muted">
         <span>
-          Uploaded by {doc.uploadedBy} · {doc.pages} page{doc.pages > 1 ? "s" : ""}
+          Uploaded by {doc.uploadedBy} ({roleLabelForName(doc.uploadedBy).toLowerCase()}) ·{" "}
+          {doc.pages} page{doc.pages > 1 ? "s" : ""}
         </span>
         {doc.scanQuality === "low" && (
           <span className="font-medium text-warn">· low scan quality</span>

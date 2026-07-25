@@ -7,7 +7,7 @@ import type {
   TaxReturn,
   Thread,
 } from "./types";
-import { gradeFromScore } from "./design";
+import { ROLE, gradeFromScore } from "./design";
 
 /* ---------------------------------------------------------------------------
    Hardcoded demo data. No database, no API, no document parsing.
@@ -92,6 +92,25 @@ export const CURRENT_USER_ID = "u-jordan";
 
 export function personByName(name: string): Person | undefined {
   return PEOPLE.find((p) => p.name === name || p.name.split(" ")[0] === name);
+}
+
+/**
+ * The role to print beside a name — "Jordan Reyes" → "Preparer".
+ *
+ * A bare first name only means something to someone who already knows the
+ * team, so every surface that shows a name shows this next to it. It lives
+ * here, next to PEOPLE, because three screens had been about to grow three
+ * slightly different versions of it.
+ *
+ * Non-people are named too: audit trails record "AI" and "System" as actors,
+ * and leaving those unlabelled is what makes a machine's edit look like a
+ * colleague's.
+ */
+export function roleLabelForName(name: string): string {
+  if (name === "AI") return "Automated";
+  if (name === "System") return "Automatic";
+  const person = personByName(name);
+  return person ? ROLE[person.role].label : "Staff";
 }
 
 export function initialsOf(name: string): string {

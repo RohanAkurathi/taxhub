@@ -15,7 +15,12 @@ import {
   Segmented,
 } from "@/components/ui";
 import { ROLE, STAGE } from "@/lib/design";
-import { daysSince, documentsFor, personByName, relativeTime } from "@/lib/mockData";
+import {
+  daysSince,
+  documentsFor,
+  relativeTime,
+  roleLabelForName,
+} from "@/lib/mockData";
 import { returnSummaryById } from "@/lib/mockVolume";
 import { useStore } from "@/lib/store";
 import type {
@@ -114,10 +119,10 @@ function withMentions(body: string) {
   );
 }
 
-/** "Jordan Reyes" → "preparer". Falls back to nothing rather than guessing. */
+/** "Jordan Reyes" → "preparer". Lowercased because it reads inside a sentence
+    here; the label itself comes from the one shared definition. */
 function roleOfName(name: string): string {
-  const person = personByName(name);
-  return person ? ROLE[person.role].label.toLowerCase() : "staff";
+  return roleLabelForName(name).toLowerCase();
 }
 
 const REQUEST_STATUS: Record<

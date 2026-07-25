@@ -14,7 +14,7 @@ import {
   cx,
 } from "@/components/ui";
 import { useStore } from "@/lib/store";
-import { daysSince, relativeTime , personByName } from "@/lib/mockData";
+import { daysSince, relativeTime, roleLabelForName } from "@/lib/mockData";
 import { agingTone, returnSummaryById } from "@/lib/mockVolume";
 import type { Owner, RequestStatus, ThreadAnchor, TaxReturn, ReturnLine } from "@/lib/types";
 
@@ -552,11 +552,8 @@ function Row({
               </Link>
             )}
             <span className="text-xs text-faint">
-              asked by {item.askedBy}
-              {item.askedBy !== "System" && personByName(item.askedBy) && (
-                <> ({personByName(item.askedBy)!.role})</>
-              )}{" "}
-              · {relativeTime(item.askedAt)}
+              asked by {item.askedBy} ({roleLabelForName(item.askedBy).toLowerCase()})
+              {" "}· {relativeTime(item.askedAt)}
             </span>
           </div>
 
