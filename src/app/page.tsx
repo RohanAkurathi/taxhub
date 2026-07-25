@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { Card, SectionLabel } from "@/components/ui";
+import { LogoMark } from "@/components/Logo";
 import { useStore } from "@/lib/store";
 
 /* ---------------------------------------------------------------------------
@@ -69,8 +70,18 @@ export default function Home() {
   return (
     <Shell crumbs={[{ label: "Start" }]}>
       <div className="mx-auto max-w-4xl px-6 py-10">
-        <SectionLabel>GreenGrowth CPAs · case-study prototype</SectionLabel>
-        <h1 className="mt-2 max-w-2xl text-3xl font-semibold leading-tight tracking-tight text-balance">
+        <div className="flex items-center gap-2.5">
+          <LogoMark size={36} />
+          <div>
+            <p className="text-lg font-semibold leading-none tracking-tight">
+              Tax<span className="text-accent">Hub</span>
+            </p>
+            <SectionLabel className="mt-1">
+              GreenGrowth CPAs · case-study prototype
+            </SectionLabel>
+          </div>
+        </div>
+        <h1 className="mt-5 max-w-2xl text-3xl font-semibold leading-tight tracking-tight text-balance">
           A tax platform where every number traces back to the paper it came from.
         </h1>
 

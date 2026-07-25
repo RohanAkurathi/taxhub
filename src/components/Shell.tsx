@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ROLE } from "@/lib/design";
 import { useStore } from "@/lib/store";
 import { Avatar, Chip, cx } from "./ui";
+import { LogoMark } from "./Logo";
 
 /* ---------------------------------------------------------------------------
    The application shell.
@@ -138,11 +139,15 @@ export function Shell({
     <div className="flex h-screen flex-col overflow-hidden bg-ground">
       {/* Top bar ---------------------------------------------------------- */}
       <header className="flex items-center gap-3 border-b border-line bg-canvas px-4 py-2.5">
-        <Link href={ROLE[role].home} className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded bg-accent text-xs font-bold text-white">
-            G
+        <Link
+          href={ROLE[role].home}
+          className="flex shrink-0 items-center gap-2"
+          aria-label="Tax Hub — home"
+        >
+          <LogoMark size={24} />
+          <span className="text-[15px] font-semibold tracking-tight">
+            Tax<span className="text-accent">Hub</span>
           </span>
-          <span className="text-sm font-semibold tracking-tight">Tax Hub</span>
         </Link>
 
         <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
