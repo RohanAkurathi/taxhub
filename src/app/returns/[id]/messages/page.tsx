@@ -125,8 +125,11 @@ const REQUEST_STATUS: Record<
 
 /* -------------------------------------------------------------------------- */
 
-export default function Page(props: PageProps<"/returns/[id]/messages">) {
-  const { id } = use(props.params);
+// Typed inline rather than with Next's generated `PageProps` helper: that
+// global only exists after a build has produced .next/types, so a fresh clone
+// would fail its first typecheck before it had ever been run.
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { threads, getReturn, role, sendMessage, resolveRequest, remindRequest } =
     useStore();
 
