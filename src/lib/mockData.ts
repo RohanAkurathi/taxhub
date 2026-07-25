@@ -610,9 +610,9 @@ const RIVERA_LINES: ReturnLine[] = [
       byName: "Dana Whitfield",
       byRole: "reviewer",
       at: "2026-03-21T16:05:00",
-      note: "Is the consulting work an SSTB? If Marcus consults for a single client for most of his income, the deduction may not stand at this bracket. Please confirm before this goes out.",
+      note: "Is the $12,000 of consulting a trade or business, or a one-off payment? The deduction only stands if he carried the work on regularly. Please confirm before this goes out.",
       resolution:
-        "Confirmed with the client: the consulting work spans six clients, so it is not an SSTB and the deduction stands.",
+        "Confirmed with the client: he consulted on recurring engagements through the year, so it is a trade or business and the deduction stands.",
     },
     provenance: {
       kind: "calculation",
@@ -626,7 +626,7 @@ const RIVERA_LINES: ReturnLine[] = [
     ],
     history: [
       { at: "2026-03-19T15:40:00", actor: "AI", action: "extracted", detail: "Computed $2,400 as 20% of $12,000 QBI", to: 2400 },
-      { at: "2026-03-21T16:05:00", actor: "Dana Whitfield", action: "flagged", detail: "Held pending an SSTB determination" },
+      { at: "2026-03-21T16:05:00", actor: "Dana Whitfield", action: "flagged", detail: "Held pending confirmation that the consulting is a trade or business" },
     ],
   },
   {
@@ -1474,7 +1474,7 @@ export const THREADS: Thread[] = [
         author: "Dana Whitfield",
         authorRole: "reviewer",
         visibility: "internal",
-        body: "@Jordan flagging line 13 — confirm the consulting isn't an SSTB before the QBI deduction stands. At his income it matters.",
+        body: "@Jordan flagging line 13 — he's at $81k taxable so the SSTB limits don't reach him, that part's fine. What I need before this stands is that the $12,000 is actually a trade or business and not one payment that happened to land on a 1099-NEC.",
         at: "2026-03-21T16:05:00",
         mentions: ["Jordan Reyes"],
       },
@@ -1484,7 +1484,7 @@ export const THREADS: Thread[] = [
         author: "Jordan Reyes",
         authorRole: "preparer",
         visibility: "internal",
-        body: "Pulling his engagement list to check the client mix. If it's one client for most of the income we have a problem; if it's spread we're fine.",
+        body: "Pulling his engagement letters. If he consulted through the year on recurring work it's a trade or business and it stands; if it was one project that fell in his lap, the deduction comes off.",
         at: "2026-03-21T17:10:00",
       },
       {
@@ -1563,6 +1563,18 @@ export const THREADS: Thread[] = [
     returnId: "ret-chen-2025",
     anchor: { kind: "question", id: "q-chen-3", label: "Questionnaire · Q3 dependents" },
     items: [
+      /* The question Sarah is answering came from the onboarding questionnaire,
+         not from a person typing in this thread — so without it rendered here,
+         the transcript opened with an answer to nothing. The anchor above is
+         only a chip; it is not a conversational turn. Carrying the question in
+         as a system line is also the honest version of what happened, and it
+         shows a questionnaire answer landing in the same thread as chat. */
+      {
+        kind: "system",
+        id: "m7-q",
+        body: "Questionnaire, Q3: “Did anyone new join your household in 2025 — a birth, an adoption, or someone moving in?”",
+        at: "2026-03-25T07:39:00",
+      },
       {
         kind: "message",
         id: "m7",

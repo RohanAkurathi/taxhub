@@ -552,7 +552,9 @@ function Row({
               </Link>
             )}
             <span className="text-xs text-faint">
-              asked by {item.askedBy} ({roleLabelForName(item.askedBy).toLowerCase()})
+              {item.askedBy === "System"
+                ? "raised automatically"
+                : `asked by ${item.askedBy} (${roleLabelForName(item.askedBy).toLowerCase()})`}
               {" "}· {relativeTime(item.askedAt)}
             </span>
           </div>

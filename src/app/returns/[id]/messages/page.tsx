@@ -695,7 +695,12 @@ function RequestCard({
               : `${item.resolution.value} was written to line ${item.resolution.writesToLine}, and the flag there is cleared.`
             : clientView
             ? "Nothing further is needed from you on this."
-            : "Nothing on the return needed to change."}
+            : /* Scoped to this request, not to the return. A settled request
+                 with no `resolution` wrote no value — but the document it
+                 chased may still be feeding a line, which is exactly the case
+                 on Marcus's 1099-INT. The old wording claimed otherwise and
+                 contradicted the anchor chip on its own card. */
+              "Settled — no value was written to the return from this request."}
         </p>
       </details>
     );
@@ -709,9 +714,14 @@ function RequestCard({
             badge reading "Done" beside "Settled" was pure noise. */}
         {!clientView && !resolved && <OwnerBadge owner={item.owner} />}
         <span className="ml-auto text-xs text-faint">
-          Asked by {item.askedBy}
-          {item.askedBy !== "System" && (
-            <> ({roleOfName(item.askedBy)})</>
+          {/* "Asked by System" reads as a colleague nobody has met. Nothing
+              asked this — it was raised off the back of Sarah's answer. */}
+          {item.askedBy === "System" ? (
+            "Raised automatically"
+          ) : (
+            <>
+              Asked by {item.askedBy} ({roleOfName(item.askedBy)})
+            </>
           )}{" "}
           · {relativeTime(item.askedAt)}
         </span>

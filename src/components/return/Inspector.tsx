@@ -259,7 +259,7 @@ export function Inspector({
                 rows={3}
                 value={flagNote}
                 onChange={(e) => setFlagNote(e.target.value)}
-                placeholder="e.g. Confirm this isn't an SSTB before the deduction stands."
+                placeholder="e.g. Confirm the consulting is a trade or business before the deduction stands."
                 className="mt-1 w-full rounded-md border border-line bg-canvas px-2.5 py-1.5 text-sm"
                 autoFocus
               />

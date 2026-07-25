@@ -184,11 +184,11 @@ const WARNINGS: AIWarning[] = [
     id: "warn-rivera-qbi",
     returnId: "ret-rivera-2025",
     severity: "serious",
-    title: "Consulting income may be a specified service trade or business",
+    title: "Consulting income may not be a qualified trade or business",
     detail:
-      "Schedule C income of $12,000 is claimed for the qualified business income deduction. If the consulting work is an SSTB, the deduction may be limited or unavailable at this income level.",
+      "A $2,400 deduction is claimed on $12,000 of Schedule C consulting income. The deduction only applies where the work is a trade or business carried on regularly — a single one-off payment would not qualify.",
     suggestedAction:
-      "Confirm the nature of the consulting work with the client before the deduction stands.",
+      "Confirm with the client whether the consulting was ongoing before the deduction stands.",
     relatedLines: ["13"],
     method: "rule check",
   },
