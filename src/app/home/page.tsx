@@ -19,7 +19,13 @@ import {
 } from "@/lib/design";
 import { documentsFor, relativeTime, tasksFor } from "@/lib/mockData";
 import { useStore } from "@/lib/store";
-import type { ClientTask, Stage, ThreadItem } from "@/lib/types";
+import type {
+  ClientTask,
+  SourceDocument,
+  Stage,
+  Thread,
+  ThreadItem,
+} from "@/lib/types";
 
 /* ---------------------------------------------------------------------------
    The client's home — challenge 03, and the client half of challenge 06.
@@ -63,6 +69,73 @@ type OpenQuestion = {
 
 function plural(n: number, one: string, many: string) {
   return n === 1 ? one : many;
+}
+
+/* The record of what has already happened.
+
+   The strip above answers "where am I" with five green ticks, which is the
+   shape of the progress but not the substance — a client who wants to know
+   *what we actually did* can otherwise only infer it. So this reads the same
+   events the firm's audit trail is built from (documents received, checklist
+   items finished, questions answered) and re-tells them in the second person.
+
+   No new state: every entry is an existing timestamp on an existing object.
+   Nothing here can say something happened that the firm's own record doesn't
+   also say — which is the whole point of not keeping two status stores. */
+type HistoryEntry = { at: string; text: string };
+
+/* Titles are written as headings ("Upload your W-2") and read here mid-sentence.
+   Blanket .toLowerCase() turns that into "w-2", so only a leading capital that
+   is followed by a lowercase letter gets folded — acronyms survive intact. */
+function midSentence(title: string) {
+  return /^[A-Z][a-z]/.test(title) ? title[0].toLowerCase() + title.slice(1) : title;
+}
+
+function buildHistory(
+  docs: SourceDocument[],
+  tasks: ClientTask[],
+  threads: Thread[],
+  returnId: string,
+  clientName: string
+): HistoryEntry[] {
+  const entries: HistoryEntry[] = [];
+
+  for (const d of docs) {
+    entries.push({
+      at: d.uploadedAt,
+      text:
+        d.uploadedBy === clientName
+          ? `You sent us your ${d.title}`
+          : `${d.uploadedBy} added your ${d.title}`,
+    });
+  }
+
+  for (const t of tasks) {
+    // An upload task and the document it produced are one act, and listing both
+    // ("you finished: upload your W-2" / "you sent us your W-2") is the padding
+    // this section exists to avoid. The document wins: it names what arrived.
+    if (t.kind === "upload") continue;
+    if (t.status === "done" && t.completedAt) {
+      entries.push({ at: t.completedAt, text: `You finished: ${midSentence(t.title)}` });
+    }
+  }
+
+  for (const th of threads) {
+    if (th.returnId !== returnId) continue;
+    for (const item of th.items) {
+      if (item.kind === "request" && item.status === "resolved" && item.resolvedAt) {
+        entries.push({
+          at: item.resolvedAt,
+          // Named so the payoff is visible: answering did something.
+          text: item.resolution
+            ? `You answered our question about ${midSentence(item.title)} — we updated your return`
+            : `You answered our question about ${midSentence(item.title)}`,
+        });
+      }
+    }
+  }
+
+  return entries.sort((a, b) => (a.at < b.at ? 1 : -1));
 }
 
 export default function ClientHome() {
@@ -119,6 +192,13 @@ export default function ClientHome() {
   // reads as though the current stage hasn't started. At `filed` this is empty,
   // which is why the block below is conditional rather than always rendered.
   const upcoming = CLIENT_JOURNEY.slice(milestone + 1);
+  const history = buildHistory(
+    documentsFor(clientReturnId),
+    myTasks,
+    threads,
+    clientReturnId,
+    ret.clientName
+  );
 
   const secondLine = questions.length
     ? `There ${plural(questions.length, "is one question", `are ${questions.length} questions`)} waiting for you below.`
@@ -202,6 +282,36 @@ export default function ClientHome() {
               );
             })}
           </ol>
+
+          {/* What's already happened. Folded shut, because on a healthy return
+              nobody needs it — but "we haven't forgotten about you" is exactly
+              what a client wants on the day they start to wonder. */}
+          {history.length > 0 && (
+            <details className="group mt-4 border-t border-hair pt-3">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+                <span
+                  aria-hidden="true"
+                  className="text-xs transition-transform group-open:rotate-90"
+                >
+                  ▸
+                </span>
+                What&apos;s happened so far
+                <span className="tnum text-xs font-normal text-faint">
+                  ({history.length})
+                </span>
+              </summary>
+              <ol className="mt-3 space-y-2 border-l border-hair pl-4">
+                {history.map((h, i) => (
+                  <li key={i} className="text-sm leading-relaxed">
+                    <span className="text-ink">{h.text}</span>
+                    <span className="ml-1.5 text-xs text-faint">
+                      {relativeTime(h.at)}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
         </Card>
 
         <div className="mt-6 grid gap-5 lg:grid-cols-3">
