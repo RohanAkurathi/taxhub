@@ -49,6 +49,22 @@ screens render it.
 
 ---
 
+## On the stack
+
+The brief was explicit that the frontend is what's being graded, that
+production infrastructure is not expected, and that hardcoded data and a faked
+AI are the *ideal* use of the time. So this is a TypeScript/React frontend with
+no backend at all — building a Flask service underneath it would have spent the
+budget on the one part nobody asked to see.
+
+Tailwind is used because it's in the role's required skills, and the design
+tokens are defined once in `globals.css` rather than scattered as utility
+soup. Where a real backend belongs is set out under
+[going to production](#if-this-were-going-to-production-here), against the
+Python/Flask/PostgreSQL stack the role actually maintains.
+
+---
+
 ## Start here
 
 | Where | What it shows |
@@ -159,22 +175,47 @@ gap gets caught.
 
 ---
 
-## If this were going to production
+## Privacy, explainability and auditability
 
-The honest list, in the order I would tackle it:
+A tax platform holds about the most sensitive personal data there is — SSNs,
+income, dependents, bank details — so these were treated as design constraints
+from the first screen rather than a compliance pass at the end.
 
-1. Replace `mockAI.ts` with a real extraction service — a vision-capable model
-   over the scanned page with structured tool output, returning the same shape.
-   Bounding boxes would replace the hardcoded box IDs so highlights land on real
-   pixels.
-2. Persist the transform log properly. The audit model here is already the right
-   shape for an append-only table; it just lives in memory.
-3. Real auth and per-firm tenancy. The role architecture assumes it.
-4. A human-review queue for every extraction below the auto-apply threshold, with
-   the accept/reject signal fed back as evaluation data — that loop is how the
-   confidence numbers would earn their keep.
-5. Accessibility pass with a screen reader, and print stylesheets (accountants
-   print).
+| Requirement | How it is built in |
+| --- | --- |
+| **Explainability** | No number is displayed without its origin. Provenance is a required field on every line, and the interface makes the AI state *why* it read what it read, plus independent corroboration. There is no path to a value whose derivation cannot be shown. |
+| **Auditability** | The uploaded document is immutable; every change is an appended entry with actor, action, timestamp, and before/after. The audit trail is the storage model, not a log written alongside it — which is what makes it trustworthy under scrutiny. |
+| **Human accountability** | The AI may not populate a field below the confidence threshold, and confirming an uncertain reading requires opening the source. Every value ends up attributable to a named person, which is what a preparer signing a return actually needs. |
+| **Data minimization** | Every message carries a `visibility` field, and the client view is built by filtering the set rather than rendering everything and hiding some of it. In this prototype that filter runs client-side because there is no server; the point is that the boundary lives in the data model, so moving it behind an API is a change of location, not of design. |
+| **Right to explanation** | The client-facing return view exists specifically so a taxpayer can see every figure on their own return and where it came from, in plain language — the practical form of GDPR Article 22's explanation right. |
+
+Not built, and honestly out of scope for a prototype: encryption at rest, PII
+redaction in logs, retention schedules, consent records, and DSAR tooling.
+
+---
+
+## If this were going to production here
+
+GreenGrowth runs a Python/Flask/PostgreSQL monolith on AWS Lightsail. This
+prototype is a frontend, so it would attach to that rather than replace it:
+
+1. **Extraction service.** Replace `mockAI.ts` with a Flask endpoint calling a
+   vision-capable model (Anthropic's API is the natural fit) with structured
+   output, returning the exact shape `AIExtraction` already defines. The
+   contract does not change — that was the point of writing it down. Real
+   bounding boxes replace the hardcoded box IDs so highlights land on pixels.
+2. **Postgres schema.** `documents` and `return_lines` map cleanly to tables;
+   `transforms` becomes the append-only audit table the in-memory history is
+   already shaped like. Every row carries a firm id for tenancy.
+3. **The review loop.** Every extraction below the auto-apply threshold goes to
+   a human queue, and each accept/reject is written back as labelled evaluation
+   data. That loop is how the confidence numbers earn their keep, and it is the
+   part most AI features skip.
+4. **QuickBooks.** Expense and income data pulled through the Intuit API becomes
+   another `Provenance` kind alongside documents and questionnaire answers — the
+   model was built with that extension in mind.
+5. **Everything else:** real auth and per-firm tenancy, a screen-reader pass, and
+   print stylesheets, because accountants print.
 
 ---
 
