@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { FieldState, Owner, SourceDocument } from "@/lib/types";
 import {
   FIELD_STATE,
@@ -309,9 +309,46 @@ export function DocumentView({
   onBoxClick?: (boxId: string) => void;
 }) {
   const interactive = Boolean(onBoxClick);
+  const [view, setView] = useState<"fields" | "scan">("fields");
 
   return (
     <figure className="overflow-hidden rounded-sm border border-lockedge bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      {/* Fields is the AI's structured reading; Original is the file the
+          client actually sent. Keeping both one tap apart is the point — the
+          reading is only trustworthy while the original stays in reach. */}
+      <div className="flex items-center justify-between border-b border-lockedge bg-panel px-2 py-1">
+        <span className="px-1.5 text-[10px] font-medium uppercase tracking-[0.07em] text-faint">
+          {view === "fields" ? "What the AI read" : "As uploaded"}
+        </span>
+        <div className="flex gap-0.5">
+          {(
+            [
+              ["fields", "Fields"],
+              ["scan", "Original"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setView(key)}
+              aria-pressed={view === key}
+              className={cx(
+                "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
+                view === key
+                  ? "bg-accent text-white"
+                  : "text-muted hover:bg-locksoft hover:text-ink"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {view === "scan" && <DocumentScan doc={doc} highlightBoxId={highlightBoxId} />}
+
+      {view === "fields" && (
+      <>
       {/* Masthead, the way a real form carries one. */}
       <figcaption className="border-b-2 border-ink/80 px-3.5 pb-2 pt-3">
         <div className="flex items-baseline justify-between gap-3">
@@ -386,6 +423,9 @@ export function DocumentView({
         })}
       </div>
 
+      </>
+      )}
+
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-lockedge px-3.5 py-2 text-[11px] text-muted">
         <span>
           Uploaded by {doc.uploadedBy} · {doc.pages} page{doc.pages > 1 ? "s" : ""}
@@ -409,6 +449,81 @@ export function DocumentView({
   );
 }
 
+
+/**
+ * A facsimile of the client's uploaded file.
+ *
+ * There is no real scan in the prototype, so this renders one honestly: the
+ * same field data laid out like the government form, in a typewriter face,
+ * slightly askew when the photo was poor — with the glare that defeated the
+ * AI actually visible over the digit it obscured. Seeing WHY the machine
+ * struggled does more for trust than any confidence percentage.
+ */
+function DocumentScan({
+  doc,
+  highlightBoxId,
+}: {
+  doc: SourceDocument;
+  highlightBoxId?: string;
+}) {
+  const rough = doc.scanQuality === "low";
+  return (
+    <div className="bg-locksoft/60 p-3">
+      <div
+        className={cx(
+          "mx-auto max-w-[340px] border border-ink/30 bg-[#fdfcf7] p-3 shadow-[0_2px_8px_rgba(0,0,0,0.14)]",
+          rough && "rotate-[-0.8deg]"
+        )}
+      >
+        <div className="flex items-baseline justify-between border-b-2 border-ink/70 pb-1">
+          <span className="font-mono text-[11px] font-bold tracking-tight">
+            {doc.title.split("·")[0]?.trim()}
+          </span>
+          <span className="font-mono text-[10px]">{doc.taxYear}</span>
+        </div>
+        <p className="mt-0.5 font-mono text-[9px] uppercase text-ink/60">
+          {doc.issuer}
+        </p>
+
+        <div className="mt-2 grid grid-cols-2 gap-0 border border-ink/40">
+          {doc.boxes.map((box) => (
+            <div
+              key={box.id}
+              className={cx(
+                "relative border border-ink/25 px-1.5 py-1",
+                box.wide && "col-span-2",
+                box.id === highlightBoxId && "bg-[#fdf6d8]"
+              )}
+            >
+              <span className="block font-mono text-[7.5px] uppercase leading-tight text-ink/55">
+                {box.label}
+              </span>
+              <span className="tnum block text-[11px] leading-snug">
+                {box.value}
+              </span>
+              {box.uncertain && (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-6 top-1 h-6 w-10 rounded-full bg-white/85 blur-[3px]"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {rough && (
+          <p className="mt-1.5 font-mono text-[8px] italic text-ink/45">
+            photographed · {doc.pages} page{doc.pages > 1 ? "s" : ""}
+          </p>
+        )}
+      </div>
+      <p className="mx-auto mt-2 max-w-[340px] text-center text-[10px] leading-relaxed text-faint">
+        Simulated scan — in production this is the client&rsquo;s actual file, and the
+        highlight lands on real pixels.
+      </p>
+    </div>
+  );
+}
 
 /* Toasts are rendered by <ToastRail/> inside Shell, so they appear once per
    page rather than once per component that wants to announce something. */

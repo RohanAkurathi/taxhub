@@ -147,7 +147,7 @@ export default function ClientHome() {
           <span className="text-muted">{secondLine}</span>
         </p>
         <p className="mt-1.5 text-sm text-muted">
-          {ret.preparerName} is looking after it · last update{" "}
+          Your preparer, {ret.preparerName}, is looking after it · last update{" "}
           {relativeTime(ret.lastActivity)}
         </p>
 

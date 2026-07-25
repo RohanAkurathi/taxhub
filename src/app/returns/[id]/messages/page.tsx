@@ -14,7 +14,7 @@ import {
   cx,
 } from "@/components/ui";
 import { ROLE, STAGE } from "@/lib/design";
-import { daysSince, documentsFor, relativeTime } from "@/lib/mockData";
+import { daysSince, documentsFor, personByName, relativeTime } from "@/lib/mockData";
 import { returnSummaryById } from "@/lib/mockVolume";
 import { useStore } from "@/lib/store";
 import type {
@@ -113,6 +113,12 @@ function withMentions(body: string) {
   );
 }
 
+/** "Jordan Reyes" → "preparer". Falls back to nothing rather than guessing. */
+function roleOfName(name: string): string {
+  const person = personByName(name);
+  return person ? ROLE[person.role].label.toLowerCase() : "staff";
+}
+
 const REQUEST_STATUS: Record<
   RequestStatus,
   { staff: string; client: string; tone: "accent" | "warn" | "ok" }
@@ -156,6 +162,29 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   }, [returnThreads]);
 
   const visibleEntries = clientView ? entries.filter((e) => !isInternal(e.item)) : entries;
+
+  /* Everyone who speaks in this thread, with their role stated once. */
+  const cast = useMemo(() => {
+    const seen = new Map<string, { name: string; role: Role; roleLabel: string }>();
+    for (const e of visibleEntries) {
+      if (e.item.kind !== "message") continue;
+      if (!seen.has(e.item.author)) {
+        seen.set(e.item.author, {
+          name: e.item.author,
+          role: e.item.authorRole,
+          roleLabel:
+            e.item.authorRole === "client"
+              ? "the client"
+              : ROLE[e.item.authorRole].label.toLowerCase(),
+        });
+      }
+    }
+    // Clients first, then firm staff — the reader's question is "which one
+    // is the client", so answer it first.
+    return [...seen.values()].sort((a, b) =>
+      a.role === "client" ? -1 : b.role === "client" ? 1 : 0
+    );
+  }, [visibleEntries]);
 
   const openCount = visibleEntries.filter(
     (e) => e.item.kind === "request" && e.item.status !== "resolved"
@@ -284,6 +313,19 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             replaced by {firstName}&rsquo;s own.
           </div>
         )}
+
+        {/* Who's who — the two or three people every message below is from.
+            Names alone force the reader to keep a mental roster; introducing
+            the cast once means nobody has to. */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {cast.map((person) => (
+            <span key={person.name} className="flex items-center gap-1.5 text-xs">
+              <Avatar name={person.name} size={20} tone={avatarTone(person.role)} />
+              <span className="font-medium text-ink">{person.name}</span>
+              <span className="text-faint">{person.roleLabel}</span>
+            </span>
+          ))}
+        </div>
 
         {/* What is outstanding, before any scrolling ---------------------- */}
         <OpenSummary
@@ -500,8 +542,9 @@ function InternalNote({ item }: { item: Extract<ThreadItem, { kind: "message" }>
       <Avatar name={item.author} size={28} tone="neutral" />
       <div className="max-w-[80%]">
         <div className="flex items-baseline gap-2 text-xs">
-          <span className="font-medium text-ink">
-            {item.author} — firm only
+          <span className="font-medium text-ink">{item.author}</span>
+          <span className="text-faint">
+            {ROLE[item.authorRole].label.toLowerCase()} · firm only
           </span>
           <span className="text-faint">{relativeTime(item.at)}</span>
         </div>
@@ -550,6 +593,15 @@ function Bubble({
     ? `${item.author} wrote to you`
     : `${item.author} wrote to ${firstName}`;
 
+  // The author's role rides along except when the author is "you" — nobody
+  // needs their own role explained to them.
+  const roleTag =
+    clientView && fromClient
+      ? null
+      : fromClient
+      ? "client"
+      : ROLE[item.authorRole].label.toLowerCase();
+
   return (
     <div className={cx("flex items-start gap-2.5", mine && "flex-row-reverse")}>
       <Avatar name={item.author} size={28} tone={avatarTone(item.authorRole)} />
@@ -561,6 +613,7 @@ function Bubble({
           )}
         >
           <span className="font-medium text-ink">{direction}</span>
+          {roleTag && <span className="text-faint">{roleTag}</span>}
           <span className="text-faint">{relativeTime(item.at)}</span>
         </div>
         <div
@@ -641,7 +694,11 @@ function RequestCard({
             badge reading "Done" beside "Settled" was pure noise. */}
         {!clientView && !resolved && <OwnerBadge owner={item.owner} />}
         <span className="ml-auto text-xs text-faint">
-          Asked by {item.askedBy} · {relativeTime(item.askedAt)}
+          Asked by {item.askedBy}
+          {item.askedBy !== "System" && (
+            <> ({roleOfName(item.askedBy)})</>
+          )}{" "}
+          · {relativeTime(item.askedAt)}
         </span>
       </div>
 

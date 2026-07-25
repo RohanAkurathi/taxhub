@@ -172,6 +172,10 @@ export function Inspector({
       {/* 2 — Who has worked on it? --------------------------------------- */}
       <section className="mt-5 border-t border-hair pt-4">
         <SectionLabel>Who&rsquo;s worked on it</SectionLabel>
+        <p className="mt-1 text-[11px] leading-relaxed text-faint">
+          Every number travels the same road: the AI reads it, the preparer checks it,
+          the reviewer signs off.
+        </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {line.pipeline.map((step, i) => (
             <PipelineChip key={step.actor} step={step} showArrow={i > 0} />
@@ -183,7 +187,11 @@ export function Inspector({
               .filter((p) => p.note && p.status !== "waiting")
               .map((p) => (
                 <li key={p.actor} className="text-[11px] text-muted">
-                  <span className="font-medium text-ink">{p.actorName}</span> — {p.note}
+                  <span className="font-medium text-ink">{p.actorName}</span>
+                  {p.actor !== "ai" && (
+                    <span className="text-faint"> · {p.actor}</span>
+                  )}{" "}
+                  — {p.note}
                 </li>
               ))}
           </ul>
