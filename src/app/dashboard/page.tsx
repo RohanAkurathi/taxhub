@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { Card, Grade, OwnerBadge, SectionLabel, cx } from "@/components/ui";
+import { Card, Grade, OwnerBadge, SectionLabel, cx , Segmented } from "@/components/ui";
 import { STAGE } from "@/lib/design";
 import {
   FILING_DEADLINE,
@@ -101,16 +101,29 @@ export default function DashboardPage() {
 
   // filterReturns sorts by priority by default, so the board and the returns
   // list rank identically — one ordering rule, not two that drift.
+  const isReviewer = role === "reviewer";
+
   const rows = useMemo(() => {
-    const base = scope === "mine" ? MY_RETURNS : ALL_RETURNS;
+    // "Mine" means different books for different jobs: the preparer's is what
+    // they prepare, the reviewer's is what awaits their sign-off. Showing a
+    // reviewer someone else's prep queue under the label "Mine" was a lie.
+    const base =
+      scope === "mine"
+        ? isReviewer
+          ? ALL_RETURNS.filter((r) => r.reviewerName === REVIEWER)
+          : MY_RETURNS
+        : ALL_RETURNS;
     return filterReturns(
       base.map((r) => liveById.get(r.id) ?? r),
       { sort: "priority" }
     );
-  }, [scope, liveById]);
+  }, [scope, liveById, isReviewer]);
 
   const buckets = useMemo(() => boardBuckets(rows), [rows]);
   const mine = scope === "mine";
+  const mineCount = isReviewer
+    ? ALL_RETURNS.filter((r) => r.reviewerName === REVIEWER).length
+    : MY_RETURNS.length;
 
   /*
    * A reviewer's day is a different shape from a preparer's. They are not
@@ -119,7 +132,6 @@ export default function DashboardPage() {
    * move it is, and the language changes with it. Same board, same ranking,
    * different job.
    */
-  const isReviewer = role === "reviewer";
   const awaitingReview = useMemo(
     () => rows.filter((r) => r.stage === "in_review"),
     [rows]
@@ -271,11 +283,26 @@ export default function DashboardPage() {
             ? "What needs you today"
             : "What needs the firm today"}
         </h1>
-        <p className="mt-1 text-sm text-muted">
-          {isReviewer
-            ? "Nothing here is yours to build. It is finished work waiting for a second pair of eyes."
-            : "Ordered by what is most likely to slip, not by what arrived last."}
-        </p>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted">
+            {isReviewer
+              ? "Nothing here is yours to build. It is finished work waiting for a second pair of eyes."
+              : "Ordered by what is most likely to slip, not by what arrived last."}
+          </p>
+          <Segmented
+            label="Whose returns to show"
+            value={scope}
+            onChange={setScope}
+            options={[
+              {
+                value: "mine",
+                label: isReviewer ? "My review queue" : "My returns",
+                count: mineCount,
+              },
+              { value: "team", label: "The whole firm", count: ALL_RETURNS.length },
+            ]}
+          />
+        </div>
 
         {/* Header strip ------------------------------------------------- */}
         <Card className="mt-4 p-4">
@@ -303,29 +330,6 @@ export default function DashboardPage() {
                   />
                 </>
               )}
-            </div>
-
-            {/* Mine/Team is the whole manager view: same ranking, wider net. */}
-            <div
-              role="group"
-              aria-label="Whose returns to show"
-              className="inline-flex rounded-md border border-line bg-panel p-0.5"
-            >
-              {(["mine", "team"] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setScope(s)}
-                  aria-pressed={scope === s}
-                  className={cx(
-                    "rounded px-3 py-1 text-xs font-medium transition-colors",
-                    scope === s
-                      ? "bg-accent text-white"
-                      : "text-muted hover:bg-locksoft hover:text-ink"
-                  )}
-                >
-                  {s === "mine" ? "Mine" : "Team"}
-                </button>
-              ))}
             </div>
           </div>
 

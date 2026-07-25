@@ -12,6 +12,7 @@ import {
   OwnerBadge,
   SectionLabel,
   cx,
+  Segmented,
 } from "@/components/ui";
 import { ROLE, STAGE } from "@/lib/design";
 import { daysSince, documentsFor, personByName, relativeTime } from "@/lib/mockData";
@@ -213,19 +214,15 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         {openCount} open request{openCount === 1 ? "" : "s"}
       </Chip>
       {role !== "client" && (
-        <button
-          onClick={() => setPreviewClient((v) => !v)}
-          aria-pressed={previewClient}
-          title="See this conversation exactly as the client sees it"
-          className={cx(
-            "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-            previewClient
-              ? "border-okedge bg-oksoft text-ok"
-              : "border-line bg-canvas text-muted hover:border-lockedge"
-          )}
-        >
-          Client&rsquo;s view
-        </button>
+        <Segmented
+          label="Whose view of this conversation"
+          value={previewClient ? "client" : "firm"}
+          onChange={(v) => setPreviewClient(v === "client")}
+          options={[
+            { value: "firm", label: "Your view" },
+            { value: "client", label: `${firstName}'s view` },
+          ]}
+        />
       )}
     </div>
   );

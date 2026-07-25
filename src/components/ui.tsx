@@ -219,6 +219,65 @@ export function Button({
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * The one segmented control.
+ *
+ * Five screens grew their own slightly different pill toggles — Mine/Team,
+ * All/Needs attention, the document lenses, the view switchers. A viewer
+ * meeting a new variant on every screen has to re-learn the same control five
+ * times; sharing one implementation is what makes "this switches what I'm
+ * looking at" instantly recognisable everywhere.
+ */
+export function Segmented<T extends string>({
+  value,
+  onChange,
+  options,
+  size = "md",
+  label,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string; count?: number }[];
+  size?: "xs" | "md";
+  label?: string;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className={cx(
+        "inline-flex shrink-0 rounded-lg border border-line bg-panel",
+        size === "md" ? "p-0.5" : "p-px"
+      )}
+    >
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          aria-pressed={value === o.value}
+          className={cx(
+            "rounded-md font-medium transition-colors",
+            size === "md" ? "px-3 py-1 text-xs" : "px-2 py-0.5 text-[11px]",
+            value === o.value
+              ? "bg-accent text-white"
+              : "text-muted hover:bg-locksoft hover:text-ink"
+          )}
+        >
+          {o.label}
+          {o.count !== undefined && (
+            <span className={cx("tnum ml-1", value === o.value ? "opacity-80" : "opacity-60")}>
+              {o.count}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
 export function SectionLabel({
   children,
   className,
@@ -320,29 +379,16 @@ export function DocumentView({
         <span className="px-1.5 text-[10px] font-medium uppercase tracking-[0.07em] text-faint">
           {view === "fields" ? "What the AI read" : "As uploaded"}
         </span>
-        <div className="flex gap-0.5">
-          {(
-            [
-              ["fields", "Fields"],
-              ["scan", "Original"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setView(key)}
-              aria-pressed={view === key}
-              className={cx(
-                "rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
-                view === key
-                  ? "bg-accent text-white"
-                  : "text-muted hover:bg-locksoft hover:text-ink"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          size="xs"
+          label="Document view"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "fields", label: "Fields" },
+            { value: "scan", label: "Original" },
+          ]}
+        />
       </div>
 
       {view === "scan" && <DocumentScan doc={doc} highlightBoxId={highlightBoxId} />}

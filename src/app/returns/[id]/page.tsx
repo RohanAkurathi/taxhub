@@ -16,6 +16,7 @@ import {
   SectionLabel,
   StatePill,
   cx,
+  Segmented,
 } from "@/components/ui";
 import { FIELD_STATE, STAGE, formatMoney } from "@/lib/design";
 import {
@@ -297,19 +298,20 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
             <SectionLabel>
               {onlyAttention ? "Lines needing attention" : "Every line on this return"}
             </SectionLabel>
-            <div className="ml-auto flex overflow-hidden rounded-md border border-line">
-              <FilterButton
-                active={!onlyAttention}
-                onClick={() => setOnlyAttention(false)}
-              >
-                All {ret.lines.length}
-              </FilterButton>
-              <FilterButton
-                active={onlyAttention}
-                onClick={() => setOnlyAttention(true)}
-              >
-                Needs attention {attentionLines.length}
-              </FilterButton>
+            <div className="ml-auto">
+              <Segmented
+                label="Which lines to show"
+                value={onlyAttention ? "attention" : "all"}
+                onChange={(v) => setOnlyAttention(v === "attention")}
+                options={[
+                  { value: "all", label: "All lines", count: ret.lines.length },
+                  {
+                    value: "attention",
+                    label: "Needs attention",
+                    count: attentionLines.length,
+                  },
+                ]}
+              />
             </div>
           </div>
 
@@ -534,28 +536,6 @@ function SectionButton({
   );
 }
 
-function FilterButton({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={cx(
-        "px-3 py-1 text-xs font-medium transition-colors",
-        active ? "bg-accentsoft text-accentink" : "bg-canvas text-muted hover:bg-panel"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
 
 /* -------------------------------------------------------------------------- */
 

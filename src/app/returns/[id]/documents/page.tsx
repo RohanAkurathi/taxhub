@@ -11,6 +11,7 @@ import {
   EmptyState,
   SectionLabel,
   cx,
+  Segmented,
 } from "@/components/ui";
 import { documentsFor, relativeTime } from "@/lib/mockData";
 import { returnSummaryById } from "@/lib/mockVolume";
@@ -149,32 +150,23 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             aria-label="Search documents"
             className="min-w-[260px] flex-1 rounded-lg border border-line bg-canvas px-3 py-2 text-sm placeholder:text-faint"
           />
-          <div className="inline-flex rounded-lg border border-line bg-panel p-0.5">
-            {(
-              [
-                ["all", `All ${docs.length}`],
-                ["attention", `Needs an eye ${attentionCount}`],
-                ["clean", `Read cleanly ${docs.length - attentionCount}`],
-              ] as const
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => {
-                  setLens(key);
-                  setLimit(15);
-                }}
-                aria-pressed={lens === key}
-                className={cx(
-                  "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-                  lens === key
-                    ? "bg-accent text-white"
-                    : "text-muted hover:bg-locksoft hover:text-ink"
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            label="Which documents to show"
+            value={lens}
+            onChange={(v) => {
+              setLens(v);
+              setLimit(15);
+            }}
+            options={[
+              { value: "all", label: "All", count: docs.length },
+              { value: "attention", label: "Needs an eye", count: attentionCount },
+              {
+                value: "clean",
+                label: "Read cleanly",
+                count: docs.length - attentionCount,
+              },
+            ]}
+          />
         </div>
 
         {types.length > 1 && (
