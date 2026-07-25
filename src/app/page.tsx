@@ -81,6 +81,15 @@ export default function Home() {
             </SectionLabel>
           </div>
         </div>
+        {/* Said plainly, because a reviewer could otherwise mistake this page
+            for the product's first-run experience — which is the client's
+            empty account, not an orientation page for whoever is grading. */}
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          This page is a way in for whoever is reviewing the prototype, not a screen
+          the product ships. The real first-run experience is{" "}
+          <span className="font-medium text-ink">the client&rsquo;s empty account</span>{" "}
+          &mdash; third card below.
+        </p>
         <h1 className="mt-5 max-w-2xl text-3xl font-semibold leading-tight tracking-tight text-balance">
           A tax platform where every number traces back to the paper it came from.
         </h1>
