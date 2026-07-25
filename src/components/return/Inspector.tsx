@@ -136,7 +136,7 @@ export function Inspector({
       )}
 
       {/* 1 — Where did this come from? ------------------------------------ */}
-      <section className="mt-5">
+      <section className="mt-5 border-t border-hair pt-4">
         <SectionLabel>Where it came from</SectionLabel>
         <div className="mt-2">
           <ProvenanceView
@@ -149,7 +149,7 @@ export function Inspector({
       </section>
 
       {/* 2 — Who has worked on it? --------------------------------------- */}
-      <section className="mt-5">
+      <section className="mt-5 border-t border-hair pt-4">
         <SectionLabel>Who&rsquo;s worked on it</SectionLabel>
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {line.pipeline.map((step, i) => (
@@ -171,40 +171,46 @@ export function Inspector({
 
       {/* The AI's wider observations about this line. --------------------- */}
       {warnings.length > 0 && (
-        <section className="mt-5">
+        <section className="mt-5 border-t border-hair pt-4">
           <SectionLabel>What the AI noticed</SectionLabel>
-          {warnings.map((w) => (
-            <Card
-              key={w.id}
-              tone={w.severity === "info" ? "plain" : "warn"}
-              className="mt-2 p-3"
-            >
-              <div className="flex items-start gap-2">
-                <Chip tone={w.severity === "serious" ? "warn" : w.severity === "attention" ? "warn" : "neutral"}>
-                  {w.severity === "info" ? "context" : w.severity}
-                </Chip>
-              </div>
-              <p className="mt-1.5 text-xs font-medium">{w.title}</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted">{w.detail}</p>
-              <p className="mt-1.5 text-xs leading-relaxed">
-                <strong className="font-medium">Suggested:</strong> {w.suggestedAction}
-              </p>
-              <p className="mt-1.5 text-[11px] text-faint">Found by {w.method}.</p>
-            </Card>
-          ))}
+          {warnings.map((w) =>
+            w.severity === "info" ? (
+              // Context, not a problem. It earns a line, not a card — otherwise
+              // everything on this panel looks equally urgent.
+              <details key={w.id} className="group mt-2">
+                <summary className="cursor-pointer list-none text-xs text-muted marker:content-none hover:text-ink">
+                  <span className="text-faint">·</span> {w.title}
+                  <span className="ml-1 text-faint group-open:hidden">— more</span>
+                </summary>
+                <p className="mt-1.5 pl-3 text-xs leading-relaxed text-muted">
+                  {w.detail}
+                </p>
+              </details>
+            ) : (
+              <Card key={w.id} tone="warn" className="mt-2 p-3">
+                <Chip tone="warn">{w.severity === "serious" ? "check before filing" : "worth a look"}</Chip>
+                <p className="mt-1.5 text-xs font-medium">{w.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted">{w.detail}</p>
+                <p className="mt-1.5 text-xs leading-relaxed">
+                  <strong className="font-medium">Suggested:</strong> {w.suggestedAction}
+                </p>
+                <p className="mt-1.5 text-[11px] text-faint">Found by {w.method}.</p>
+              </Card>
+            )
+          )}
         </section>
       )}
 
       {/* 3 — What is being said about it? -------------------------------- */}
       {line.threadId && (
-        <section className="mt-5">
+        <section className="mt-5 border-t border-hair pt-4">
           <SectionLabel>Conversation</SectionLabel>
           <ThreadPreview threadId={line.threadId} returnId={ret.id} />
         </section>
       )}
 
       {/* 4 — What can I do? ---------------------------------------------- */}
-      <section className="mt-5">
+      <section className="mt-5 border-t border-hair pt-4">
         <SectionLabel>What you can do</SectionLabel>
 
         {editing ? (

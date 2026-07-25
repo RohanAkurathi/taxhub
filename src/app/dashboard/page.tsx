@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { Card, Chip, Grade, OwnerBadge, SectionLabel, cx } from "@/components/ui";
+import { Card, Grade, OwnerBadge, SectionLabel, cx } from "@/components/ui";
 import { STAGE } from "@/lib/design";
 import {
   FILING_DEADLINE,
@@ -42,8 +42,11 @@ const COLUMN_CAP = 6;
 /** Whose dashboard this is. Matches CURRENT_USER_ID in mockData. */
 const ME = "Jordan Reyes";
 
+/** The reviewer whose queue the reviewer view shows. */
+const REVIEWER = "Dana Whitfield";
+
 export default function DashboardPage() {
-  const { returns, threads, remindRequest } = useStore();
+  const { returns, threads, remindRequest, role } = useStore();
   const [scope, setScope] = useState<"mine" | "team">("mine");
   const [reminded, setReminded] = useState<string[]>([]);
 
@@ -109,6 +112,27 @@ export default function DashboardPage() {
   const buckets = useMemo(() => boardBuckets(rows), [rows]);
   const mine = scope === "mine";
 
+  /*
+   * A reviewer's day is a different shape from a preparer's. They are not
+   * building returns, they are clearing a queue of other people's finished
+   * work — so the same data is bucketed by approval state instead of by whose
+   * move it is, and the language changes with it. Same board, same ranking,
+   * different job.
+   */
+  const isReviewer = role === "reviewer";
+  const awaitingReview = useMemo(
+    () => rows.filter((r) => r.stage === "in_review"),
+    [rows]
+  );
+  const readyToFile = useMemo(
+    () => rows.filter((r) => r.stage === "ready_to_file"),
+    [rows]
+  );
+  const stillBeingBuilt = useMemo(
+    () => rows.filter((r) => r.stage === "in_preparation" || r.stage === "extracting"),
+    [rows]
+  );
+
   // "Filed this week" is a record of what closed, not a queue, so it reads
   // most-recent-first rather than by priority (every filed return scores 0).
   const filedThisWeek = useMemo(
@@ -128,6 +152,10 @@ export default function DashboardPage() {
 
   // rows is priority-sorted, so the first blocked row is the worst one.
   const worst = rows.find((r) => (r.blockedDays ?? 0) > 0);
+  // For a reviewer the equivalent is whatever has sat in their queue longest.
+  const oldestInReview = [...awaitingReview].sort((a, b) =>
+    a.lastActivity.localeCompare(b.lastActivity)
+  )[0];
 
   function sendReminder(r: ReturnSummary) {
     const open = openRequestsFor(r.id)[0];
@@ -135,7 +163,46 @@ export default function DashboardPage() {
     setReminded((cur) => [...cur, r.id]);
   }
 
-  const columns: {
+  const reviewerColumns: {
+    key: string;
+    title: string;
+    rows: ReturnSummary[];
+    href: string;
+    empty: string;
+    emphasis?: boolean;
+  }[] = [
+    {
+      key: "awaiting",
+      title: "Awaiting your approval",
+      rows: awaitingReview,
+      href: `/returns?stage=in_review&scope=${scope}`,
+      empty: "Your queue is clear.",
+      emphasis: true,
+    },
+    {
+      key: "building",
+      title: "Still being prepared",
+      rows: stillBeingBuilt,
+      href: `/returns?owner=preparer&scope=${scope}`,
+      empty: "Nothing in preparation.",
+    },
+    {
+      key: "ready",
+      title: "Approved, ready to file",
+      rows: readyToFile,
+      href: `/returns?stage=ready_to_file&scope=${scope}`,
+      empty: "Nothing waiting to be filed.",
+    },
+    {
+      key: "filed",
+      title: "Filed this week",
+      rows: filedThisWeek,
+      href: `/returns?stage=filed&scope=${scope}`,
+      empty: "Nothing filed in the last seven days.",
+    },
+  ];
+
+  const preparerColumns: {
     key: string;
     title: string;
     rows: ReturnSummary[];
@@ -178,6 +245,8 @@ export default function DashboardPage() {
     },
   ];
 
+  const columns = isReviewer ? reviewerColumns : preparerColumns;
+
   return (
     <Shell
       crumbs={[
@@ -186,12 +255,26 @@ export default function DashboardPage() {
       ]}
     >
       <div className="mx-auto max-w-[1400px] px-6 py-6">
-        <SectionLabel>{mine ? `Preparer · ${ME}` : "The firm · all preparers"}</SectionLabel>
+        <SectionLabel>
+          {isReviewer
+            ? mine
+              ? `Reviewer · ${REVIEWER}`
+              : "The firm · everything in review"
+            : mine
+            ? `Preparer · ${ME}`
+            : "The firm · all preparers"}
+        </SectionLabel>
         <h1 className="mt-1.5 text-xl font-semibold tracking-tight">
-          {mine ? "What needs you today" : "What needs the firm today"}
+          {isReviewer
+            ? "What is waiting on your approval"
+            : mine
+            ? "What needs you today"
+            : "What needs the firm today"}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Ordered by what is most likely to slip, not by what arrived last.
+          {isReviewer
+            ? "Nothing here is yours to build. It is finished work waiting for a second pair of eyes."
+            : "Ordered by what is most likely to slip, not by what arrived last."}
         </p>
 
         {/* Header strip ------------------------------------------------- */}
@@ -203,14 +286,23 @@ export default function DashboardPage() {
                 label="days to the April 15 deadline"
                 tone={daysToDeadline <= 3 ? "danger" : daysToDeadline <= 10 ? "warn" : "accent"}
               />
-              <Stat
-                value={openCount}
-                label={mine ? "open returns in your book" : "open returns at the firm"}
-              />
-              <Stat
-                value={buckets.yourMove.length}
-                label={mine ? "are your move right now" : "are sitting with a preparer"}
-              />
+              {isReviewer ? (
+                <>
+                  <Stat value={awaitingReview.length} label="waiting on your approval" />
+                  <Stat value={readyToFile.length} label="approved and ready to file" />
+                </>
+              ) : (
+                <>
+                  <Stat
+                    value={openCount}
+                    label={mine ? "open returns in your book" : "open returns at the firm"}
+                  />
+                  <Stat
+                    value={buckets.yourMove.length}
+                    label={mine ? "are your move right now" : "are sitting with a preparer"}
+                  />
+                </>
+              )}
             </div>
 
             {/* Mine/Team is the whole manager view: same ranking, wider net. */}
@@ -245,60 +337,85 @@ export default function DashboardPage() {
                     href={`/returns?owner=system&scope=${scope}`}
                     className="font-medium text-accentink hover:underline"
                   >
-                    {processing} more
-                  </Link>{" "}
-                  {processing === 1 ? "is" : "are"} still being read by the AI — nothing to
-                  do on those until it finishes.{" "}
+                    {processing} with the AI
+                  </Link>
+                  {onExtension > 0 && " · "}
                 </>
               )}
-              {onExtension > 0 && (
-                <>
-                  {onExtension} of the open returns {onExtension === 1 ? "is" : "are"} on
-                  extension to October, so the April clock does not apply to them.
-                </>
-              )}
+              {onExtension > 0 && <>{onExtension} on extension to October</>}
+              <span className="text-faint"> — neither needs anything from you today.</span>
             </p>
           )}
         </Card>
 
-        {/* Needs you first ---------------------------------------------- */}
-        {worst && (
-          <Card
-            tone={agingTone(worst.blockedDays) === "hot" ? "danger" : "warn"}
-            className="mt-4 p-4"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <SectionLabel>{mine ? "Needs you first" : "Needs someone first"}</SectionLabel>
-                  <OwnerBadge owner={worst.owner} />
-                </div>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink">
-                  <Link
-                    href={`/returns/${worst.id}`}
-                    className="font-semibold hover:text-accentink hover:underline"
-                  >
-                    {worst.clientName}
+        {/* What to do first --------------------------------------------- */}
+        {isReviewer
+          ? oldestInReview && (
+              <Card tone="warn" className="mt-4 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <SectionLabel>Start here</SectionLabel>
+                    <p className="mt-1.5 text-sm leading-relaxed text-ink">
+                      <Link
+                        href={`/returns/${oldestInReview.id}`}
+                        className="font-semibold hover:text-accentink hover:underline"
+                      >
+                        {oldestInReview.clientName}
+                      </Link>
+                      &rsquo;s {oldestInReview.formType} has been waiting on you for{" "}
+                      <span className="tnum font-semibold">
+                        {daysSince(oldestInReview.lastActivity)}
+                      </span>{" "}
+                      days. The preparer cannot file it until you sign it off.
+                    </p>
+                  </div>
+                  <Link href={`/returns/${oldestInReview.id}`} className="shrink-0">
+                    <span className="inline-block rounded-md border border-accent bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accentink">
+                      Review it now
+                    </span>
                   </Link>
-                  &rsquo;s {worst.formType} has stood still for{" "}
-                  <span className="tnum font-semibold">{worst.blockedDays}</span> days.{" "}
-                  {worst.blockedReason}. Nothing else on it can move until that lands.
-                </p>
-              </div>
-
-              <button
-                onClick={() => sendReminder(worst)}
-                disabled={reminded.includes(worst.id)}
-                className={cx(
-                  "shrink-0 rounded-md border border-accent bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accentink",
-                  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-accent"
-                )}
+                </div>
+              </Card>
+            )
+          : worst && (
+              <Card
+                tone={agingTone(worst.blockedDays) === "hot" ? "danger" : "warn"}
+                className="mt-4 p-4"
               >
-                {reminded.includes(worst.id) ? "Reminder sent" : "Send reminder"}
-              </button>
-            </div>
-          </Card>
-        )}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <SectionLabel>
+                        {mine ? "Needs you first" : "Needs someone first"}
+                      </SectionLabel>
+                      <OwnerBadge owner={worst.owner} />
+                    </div>
+                    <p className="mt-1.5 text-sm leading-relaxed text-ink">
+                      <Link
+                        href={`/returns/${worst.id}`}
+                        className="font-semibold hover:text-accentink hover:underline"
+                      >
+                        {worst.clientName}
+                      </Link>
+                      &rsquo;s {worst.formType} has stood still for{" "}
+                      <span className="tnum font-semibold">{worst.blockedDays}</span> days.{" "}
+                      {worst.blockedReason}. Nothing else on it can move until that lands.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => sendReminder(worst)}
+                    disabled={reminded.includes(worst.id)}
+                    className={cx(
+                      "shrink-0 rounded-md border border-accent bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accentink",
+                      "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-accent"
+                    )}
+                  >
+                    {reminded.includes(worst.id) ? "Reminder sent" : "Send reminder"}
+                  </button>
+                </div>
+              </Card>
+            )}
 
         {/* The board ---------------------------------------------------- */}
         <div className="mt-4 grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -483,7 +600,9 @@ function ReturnCard({
   const step = nextStep(row);
   const agingDays = row.blockedDays ?? daysSince(row.lastActivity);
   const dueIn = daysUntil(row.dueDate);
-  const dueLabel = dueIn > 45 ? "on extension" : `due in ${dueIn} days`;
+  // Terse enough to sit beside the form type and open-item count without
+  // truncating, which is what a card this size can actually hold.
+  const dueLabel = dueIn > 45 ? "on extension" : `${dueIn}d left`;
 
   // Only the actionable column gets a filled button. Everywhere else the next
   // step is real but secondary, and shouting about it would flatten the board.
@@ -496,7 +615,14 @@ function ReturnCard({
   );
 
   return (
-    <li className="relative rounded-lg border border-line bg-canvas p-3 transition-colors hover:border-accentedge">
+    <li
+      title={
+        row.priorityReason === "on track"
+          ? "On track — nothing pressing"
+          : `Ranked by ${row.priorityReason}`
+      }
+      className="relative rounded-lg border border-line bg-canvas p-3 transition-colors hover:border-accentedge"
+    >
       <div className="flex items-start gap-2">
         <AgingDot days={agingDays} name={row.clientName} />
         <div className="min-w-0 flex-1">
@@ -508,24 +634,28 @@ function ReturnCard({
           >
             {row.clientName}
           </Link>
-          <p className="mt-0.5 truncate text-xs text-muted">
-            {row.formType} · {dueLabel}
+          {/* One meta line, not three. Everything that is true of most cards
+              is compressed here; only genuinely urgent signals earn a row of
+              their own below. */}
+          <p className="mt-0.5 text-xs leading-snug text-muted">
+            {row.formType} ·{" "}
+            {row.stage === "filed"
+              ? `filed ${relativeTime(row.lastActivity)}`
+              : dueLabel}
+            {row.openItems > 0 && row.stage !== "filed" && (
+              <> · {row.openItems} open</>
+            )}
           </p>
         </div>
         <Grade grade={row.readinessGrade} size="sm" />
       </div>
 
       {row.blockedReason && (
-        <p className="mt-2 text-xs leading-snug text-warn">{row.blockedReason}</p>
-      )}
-
-      {row.stage === "filed" ? (
-        <p className="mt-2 text-[11px] text-faint">Filed {relativeTime(row.lastActivity)}</p>
-      ) : (
-        <p className="mt-2 text-[11px] text-faint">
-          {row.priorityReason === "on track"
-            ? "On track — no pressure on this one"
-            : `Ranked by ${row.priorityReason}`}
+        <p className="mt-2 text-xs leading-snug text-warn">
+          {row.blockedReason}
+          {row.blockedDays ? (
+            <span className="text-faint"> · {row.blockedDays} days</span>
+          ) : null}
         </p>
       )}
 
@@ -541,13 +671,6 @@ function ReturnCard({
         )}
       </div>
 
-      {row.openItems > 0 && row.stage !== "filed" && (
-        <div className="relative z-10 mt-2 flex items-center gap-1.5">
-          <Chip tone="neutral">
-            {row.openItems} open {row.openItems === 1 ? "item" : "items"}
-          </Chip>
-        </div>
-      )}
     </li>
   );
 }
