@@ -51,6 +51,8 @@ export function Inspector({
     approveLine,
     raiseFlag,
     role,
+    undoable,
+    undoLast,
   } = useStore();
   const [sendingBack, setSendingBack] = useState(false);
   const [flagNote, setFlagNote] = useState("");
@@ -493,6 +495,13 @@ export function Inspector({
               </li>
               ))}
           </ol>
+        )}
+        {/* The claim above is only worth making if it is true, so the control
+            that proves it sits directly under it. */}
+        {undoable && undoable.returnId === ret.id && (
+          <Button size="sm" className="mt-2.5" onClick={undoLast}>
+            Undo the last change
+          </Button>
         )}
         <p className="mt-2.5 text-[11px] leading-relaxed text-faint">
           The uploaded document is never altered. Every change is stored separately, which

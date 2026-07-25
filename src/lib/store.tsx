@@ -103,6 +103,9 @@ interface Store {
   /* Last recalculation, so the UI can explain what moved */
   lastChanges: RecalcChange[];
   clearChanges: () => void;
+  /** The last change, if it can still be put back. */
+  undoable: { returnId: string; label: string } | null;
+  undoLast: () => void;
 
   toasts: Toast[];
   dismissToast: (id: number) => void;
@@ -125,6 +128,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [lastChanges, setLastChanges] = useState<RecalcChange[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [remindedRequests, setRemindedRequests] = useState<string[]>([]);
+  /*
+   * The last change, kept whole.
+   *
+   * The audit trail records WHAT happened; undo needs the line as it stood
+   * BEFORE it happened. Keeping the prior line object is the cheapest honest
+   * way to make "every correction is reversible" a fact rather than a claim —
+   * and it is the same shape a transform table would replay from.
+   */
+  const [undoable, setUndoable] = useState<{
+    returnId: string;
+    line: TaxReturn["lines"][number];
+    label: string;
+  } | null>(null);
 
   const account =
     acting.kind === "self" ? CLIENT_ACCOUNTS[acting.as] : CLIENT_ACCOUNTS.reyes;
@@ -162,6 +178,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     ) => {
       const current = returns.find((r) => r.id === returnId);
       if (!current) return;
+
+      const before = current.lines.find((l) => l.id === lineId);
+      if (before) {
+        setUndoable({ returnId, line: before, label: `line ${lineId}` });
+      }
 
       const updated = current.lines.map((l) => (l.id === lineId ? apply(l) : l));
       const { lines, changes } = recalculate(updated);
@@ -542,6 +563,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [pushToast]
   );
 
+  /** Puts a line back exactly as it stood, and recalculates around it. */
+  const undoLast = useCallback(() => {
+    if (!undoable) return;
+    const target = returns.find((r) => r.id === undoable.returnId);
+    if (!target) return;
+
+    const restored = target.lines.map((l) =>
+      l.id === undoable.line.id ? undoable.line : l
+    );
+    const { lines, changes } = recalculate(restored);
+    setLastChanges(changes);
+    setReturns((cur) =>
+      cur.map((r) =>
+        r.id === undoable.returnId
+          ? {
+              ...r,
+              lines,
+              readiness: computeReadiness(lines, openRequestsFor(r.id).length),
+              lastActivity: new Date().toISOString(),
+            }
+          : r
+      )
+    );
+    setUndoable(null);
+    pushToast({
+      title: "Change undone",
+      detail: `${undoable.label} is back as it was, and the totals have followed.`,
+      tone: "info",
+    });
+  }, [undoable, returns, pushToast]);
+
   const getReturn = useCallback(
     (id: string) => returns.find((r) => r.id === id),
     [returns]
@@ -572,6 +624,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       completeTask,
       lastChanges,
       clearChanges: () => setLastChanges([]),
+      undoable: undoable
+        ? { returnId: undoable.returnId, label: undoable.label }
+        : null,
+      undoLast,
       toasts,
       dismissToast,
     }),
@@ -596,6 +652,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       remindedRequests,
       completeTask,
       lastChanges,
+      undoable,
+      undoLast,
       toasts,
       dismissToast,
     ]

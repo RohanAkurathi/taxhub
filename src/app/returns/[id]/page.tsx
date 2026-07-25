@@ -61,7 +61,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 }
 
 function ReturnWorkspace({ returnId }: { returnId: string }) {
-  const { getReturn, lastChanges, clearChanges } = useStore();
+  const { getReturn, lastChanges, clearChanges, undoable, undoLast } = useStore();
   const router = useRouter();
   const params = useSearchParams();
   const ret = getReturn(returnId);
@@ -86,7 +86,7 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
 
   useEffect(() => {
     if (!lastChanges.length) return;
-    const t = setTimeout(clearChanges, 6000);
+    const t = setTimeout(clearChanges, 15000);
     return () => clearTimeout(t);
   }, [lastChanges, clearChanges]);
 
@@ -225,6 +225,17 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
               line {c.lineId} {formatMoney(c.from)} → {formatMoney(c.to)}
             </span>
           ))}
+          {/* Undo lives here because this is where the consequence is being
+              announced. A correction you cannot take back is not a correction
+              a careful person will make quickly. */}
+          {undoable && (
+            <button
+              onClick={undoLast}
+              className="ml-auto rounded-md border border-accentedge bg-canvas px-2 py-0.5 font-medium text-accentink hover:bg-white"
+            >
+              Undo this
+            </button>
+          )}
         </div>
       )}
 
