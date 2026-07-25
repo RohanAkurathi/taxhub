@@ -142,6 +142,9 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
               ? `${attentionLines.length} need${attentionLines.length === 1 ? "s" : ""} attention`
               : "Nothing outstanding"}
           </Chip>
+          <Link href={`/returns/${ret.id}/documents`}>
+            <Button size="sm">Documents</Button>
+          </Link>
           <Link href={`/returns/${ret.id}/messages`}>
             <Button size="sm">
               Conversation{openRequests.length > 0 && ` · ${openRequests.length}`}

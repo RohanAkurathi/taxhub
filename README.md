@@ -86,10 +86,13 @@ Python/Flask/PostgreSQL stack the role actually maintains.
 3. Click the highlighted box on the document. Confirm unlocks.
 4. Confirm. Six downstream lines recalculate, the banner reports each change, the
    refund drops from $1,333 to $1,291, and the readiness grade rises.
-5. Go to `/returns/ret-rivera-2025/messages` and toggle **Client's view** — every
+5. Switch to **Reviewer** (top right) and open Elena Petrov's 1120-S — 41 lines
+   and 40 documents. The verbs change to approve and send back, and Documents
+   filters to the four files the AI struggled with.
+6. Go to `/returns/ret-rivera-2025/messages` and toggle **Client's view** — every
    internal note disappears, and the status even re-words itself.
-6. Switch roles, top right, to **Myself (client)** to see the same firm from the
-   other side.
+7. Switch to **Myself (client)** to see the same firm from the other side, on a
+   brand-new account.
 
 ---
 
@@ -143,11 +146,11 @@ The brief asked for this explicitly, so here it is without hedging.
 | 02 | Client & CPA collaboration | `/returns/[id]/messages`, `/requests` | One conversation per return, not an inbox. Internal notes interleave in place. Requests are objects with an owner and a status that **resolve back onto the return line** they are anchored to. |
 | 03 | Where to start | `/home` | The journey timeline is permanent context; the checklist is the action. One task is visually dominant at a time. After onboarding the checklist area becomes a status panel — one screen, both lives. |
 | 04 | Getting lost | Breadcrumbs, deep links, anchor chips | The selected line lives in the URL. A request's anchor chip jumps to the exact line; the line's inspector links back to the conversation. A number and the discussion about it are one object seen from two sides. |
-| 05 | Role-aware experiences | Shell + role switcher | One skeleton; role changes which rooms exist. Permissions are communicated by architecture, not by an error after a click. Includes the firm employee who is also a client of the firm. |
+| 05 | Role-aware experiences | Shell + role switcher | One skeleton; role changes which rooms exist. Permissions are communicated by architecture, not by an error after a click. A reviewer's **verbs differ from a preparer's** — approve and send back, never confirm and edit — because a second pair of eyes that quietly fixes things is not a second pair of eyes. Includes the firm employee who is also a client of the firm. |
 | 06 | Return status & progress | `STAGE` table, client journey | One pipeline, two vocabularies, rendered from the same value — so they cannot drift. Staff read "In preparation"; the client reads "We're preparing your return". |
 | 07 | An actionable dashboard | `/dashboard` | Columns are **ownership**, not process stage, because the only question that matters at 8am is whose move it is. Ranking is explainable on every card. Truncation is always stated. |
 | 08 | Clickable vs editable | `/design-system` + everywhere | One hue per concept, and color is never the only signal — every state also carries a glyph and a word, so it survives greyscale. A locked field renders as text with a reason, never a disabled input, because a greyed-out box invites clicking. |
-| 09 | Complexity made navigable | `/returns`, return outline | 240 returns and a full 1040 stay navigable through progressive disclosure, sectioning, and filters that are lenses rather than defaults. The return shows **all** lines by default — a preparer must be able to sign their name to every one. |
+| 09 | Complexity made navigable | `/returns`, return outline, `/returns/[id]/documents` | Volume at two scales: 240 returns across the firm, and a single business return carrying 41 lines and 40 documents. Both stay navigable through sectioning, search, and filters that are lenses rather than defaults. The return shows **all** lines by default — a preparer must be able to sign their name to every one. |
 | 10 | Trustworthy AI | Inspector, warnings, confirm gate | Confidence is tiered, not dumped. Below 85% the AI may not populate a field unattended, and confirming is gated behind clicking the value on the source. Every suggestion carries a rationale and independent corroboration. |
 
 ---

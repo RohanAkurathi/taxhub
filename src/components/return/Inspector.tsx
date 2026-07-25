@@ -43,7 +43,17 @@ export function Inspector({
   line: ReturnLine;
   onSelectLine: (id: string) => void;
 }) {
-  const { confirmSuggestion, verifyLine, editLine, resolveFlag } = useStore();
+  const {
+    confirmSuggestion,
+    verifyLine,
+    editLine,
+    resolveFlag,
+    approveLine,
+    raiseFlag,
+    role,
+  } = useStore();
+  const [sendingBack, setSendingBack] = useState(false);
+  const [flagNote, setFlagNote] = useState("");
   const [checkedEvidence, setCheckedEvidence] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -63,8 +73,19 @@ export function Inspector({
     setCheckedEvidence(false);
     setEditing(false);
     setShowHistory(false);
+    setSendingBack(false);
+    setFlagNote("");
     setDraft(line.amount === null ? "" : String(line.amount));
   }
+
+  /*
+   * A reviewer is not doing a preparer's job with the same buttons. They are
+   * not building the return — they are deciding whether to put their name on
+   * someone else's work, so their verbs are approve and send back. Showing
+   * them "Confirm" and "Edit" would quietly invite them to fix things
+   * themselves, which is exactly what a second pair of eyes must not do.
+   */
+  const isReviewer = role === "reviewer";
 
   const meta = FIELD_STATE[line.state];
   const warnings = getWarningsForLine(ret.id, line.id);
@@ -213,7 +234,101 @@ export function Inspector({
       <section className="mt-5 border-t border-hair pt-4">
         <SectionLabel>What you can do</SectionLabel>
 
-        {editing ? (
+        {isReviewer ? (
+          /* ---------------- Reviewer: approve, or send it back ------------- */
+          sendingBack ? (
+            <div className="mt-2">
+              <label className="text-xs text-muted" htmlFor="flag-note">
+                What does the preparer need to do?
+              </label>
+              <textarea
+                id="flag-note"
+                rows={3}
+                value={flagNote}
+                onChange={(e) => setFlagNote(e.target.value)}
+                placeholder="e.g. Confirm this isn't an SSTB before the deduction stands."
+                className="mt-1 w-full rounded-md border border-line bg-canvas px-2.5 py-1.5 text-sm"
+                autoFocus
+              />
+              <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+                This holds the line and goes back to {ret.preparerName}. Nothing on
+                this return can be filed while it is open.
+              </p>
+              <div className="mt-2 flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={!flagNote.trim()}
+                  onClick={() => {
+                    raiseFlag(ret.id, line.id, flagNote.trim());
+                    setSendingBack(false);
+                    setFlagNote("");
+                  }}
+                >
+                  Send back
+                </Button>
+                <Button
+                  variant="quiet"
+                  size="sm"
+                  onClick={() => {
+                    setSendingBack(false);
+                    setFlagNote("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2">
+              <div className="flex flex-wrap gap-2">
+                {line.flag ? (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() =>
+                      resolveFlag(
+                        ret.id,
+                        line.id,
+                        line.flag!.resolution ??
+                          `Cleared by ${line.flag!.byName} on line ${line.id}.`
+                      )
+                    }
+                  >
+                    Clear my flag
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={line.state === "needs_review" && !checkedEvidence}
+                    title={
+                      line.state === "needs_review" && !checkedEvidence
+                        ? "Look at the source before approving an uncertain figure"
+                        : undefined
+                    }
+                    onClick={() => approveLine(ret.id, line.id)}
+                  >
+                    Approve this line
+                  </Button>
+                )}
+                <Button size="sm" onClick={() => setSendingBack(true)}>
+                  Send back to {ret.preparerName.split(" ")[0]}
+                </Button>
+                <Link href={`/returns/${ret.id}/messages`}>
+                  <Button variant="quiet" size="sm">
+                    Discuss
+                  </Button>
+                </Link>
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                You are reviewing, not preparing. Corrections go back to{" "}
+                {ret.preparerName.split(" ")[0]} rather than being made here, so the
+                return keeps a single author.
+              </p>
+            </div>
+          )
+        ) : editing ? (
           <div className="mt-2">
             <label className="text-xs text-muted" htmlFor="edit-amount">
               New amount
@@ -313,14 +428,14 @@ export function Inspector({
           </div>
         )}
 
-        {confirmBlocked && !editing && (
+        {!isReviewer && confirmBlocked && !editing && (
           <p className="mt-2 text-[11px] leading-relaxed text-warn">
             This reading is uncertain, so confirming is disabled until you have looked at
             the source. Click the highlighted value on the document above.
           </p>
         )}
 
-        {!meta.editable && (
+        {!isReviewer && !meta.editable && (
           <p className="mt-2 text-[11px] leading-relaxed text-muted">
             To change this line, edit one of the lines it is calculated from. It will
             follow automatically.

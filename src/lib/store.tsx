@@ -86,6 +86,8 @@ interface Store {
   verifyLine: (returnId: string, lineId: string) => void;
   editLine: (returnId: string, lineId: string, value: number) => void;
   resolveFlag: (returnId: string, lineId: string, note: string) => void;
+  /** A reviewer's sign-off — a different claim from a preparer's check. */
+  approveLine: (returnId: string, lineId: string) => void;
   raiseFlag: (returnId: string, lineId: string, note: string) => void;
 
   /* Actions on the conversation (challenge 02) */
@@ -301,6 +303,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pushToast({
         title: "Flag resolved",
         detail: "Dana has been notified and the note is on the record.",
+        tone: "ok",
+      });
+    },
+    [mutateLine, entry, pushToast]
+  );
+
+  /**
+   * A reviewer signing off on a line.
+   *
+   * Deliberately not the same call as `verifyLine`: a preparer checking their
+   * own work and a reviewer approving it are different claims, and collapsing
+   * them would make the audit trail unable to tell you which one happened.
+   */
+  const approveLine = useCallback(
+    (returnId: string, lineId: string) => {
+      mutateLine(returnId, lineId, (line) => ({
+        ...line,
+        state: "verified",
+        flag: undefined,
+        pipeline: line.pipeline.map((p) =>
+          p.actor === "reviewer"
+            ? {
+                ...p,
+                status: "done" as const,
+                note: "Approved",
+                at: new Date().toISOString(),
+              }
+            : p
+        ),
+        history: [
+          entry("verified", "Approved by the reviewer"),
+          ...line.history,
+        ],
+      }));
+      pushToast({
+        title: "Approved",
+        detail: "Signed off. Nothing further is needed on this line.",
         tone: "ok",
       });
     },
@@ -524,6 +563,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       verifyLine,
       editLine,
       resolveFlag,
+      approveLine,
       raiseFlag,
       sendMessage,
       resolveRequest,
@@ -548,6 +588,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       verifyLine,
       editLine,
       resolveFlag,
+      approveLine,
       raiseFlag,
       sendMessage,
       resolveRequest,

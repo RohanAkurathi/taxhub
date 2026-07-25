@@ -269,12 +269,22 @@ export const DOCUMENTS: SourceDocument[] = [
   },
 ];
 
+/* Built on first use, not at module-evaluation time: the generator below
+   depends on data declared later in this file. */
+let allDocumentsCache: SourceDocument[] | null = null;
+function allDocuments(): SourceDocument[] {
+  if (!allDocumentsCache) {
+    allDocumentsCache = [...DOCUMENTS, ...generateBusinessDocuments()];
+  }
+  return allDocumentsCache;
+}
+
 export function documentsFor(returnId: string): SourceDocument[] {
-  return DOCUMENTS.filter((d) => d.returnId === returnId);
+  return allDocuments().filter((d) => d.returnId === returnId);
 }
 
 export function documentById(id: string): SourceDocument | undefined {
-  return DOCUMENTS.find((d) => d.id === id);
+  return allDocuments().find((d) => d.id === id);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -986,6 +996,127 @@ const PETROV_LINES: ReturnLine[] = [
   },
 ];
 
+
+/* -------------------------------------------------------------------------- */
+/* Volume inside a single return (challenge 09)                                */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * A real business return is not a dozen lines. Elena's 1120-S carries the kind
+ * of bulk the brief describes — schedules of expenses, a stack of K-1s, dozens
+ * of documents — because the claim that this interface stays navigable at depth
+ * is only worth anything if there is something to navigate.
+ *
+ * Generated from a fixed seed rather than typed out: the point is the volume
+ * and how the outline, filters and search behave against it, not the prose of
+ * sixty individual expense captions.
+ */
+function seeded(seed: number) {
+  return () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+}
+
+const EXPENSE_CATEGORIES = [
+  "Advertising", "Bank charges", "Client entertainment", "Cloud software",
+  "Computer equipment", "Conference fees", "Contract labor", "Courier and postage",
+  "Depreciation", "Dues and subscriptions", "Employee benefits", "Equipment rental",
+  "Insurance — general liability", "Insurance — professional", "Interest on business loans",
+  "Legal and professional", "Licenses and permits", "Marketing materials",
+  "Meals — business travel", "Office supplies", "Payroll — administrative",
+  "Payroll — design staff", "Payroll taxes", "Printing and reproduction",
+  "Rent — studio", "Repairs and maintenance", "Retirement plan contributions",
+  "Security services", "State franchise tax", "Studio utilities",
+  "Subcontracted design", "Telephone and internet", "Training and development",
+  "Travel — airfare", "Travel — lodging", "Vehicle expenses", "Waste removal",
+  "Website hosting", "Workers compensation",
+];
+
+function generateBusinessLines(): ReturnLine[] {
+  const rng = seeded(881122);
+  const lines: ReturnLine[] = [];
+
+  EXPENSE_CATEGORIES.forEach((label, i) => {
+    const amount = Math.round((900 + rng() * 46_000) / 10) * 10;
+    const roll = rng();
+    // Most of a real return is quiet. Only a handful of lines earn attention,
+    // which is exactly the ratio that makes the attention filter useful.
+    const state: ReturnLine["state"] =
+      roll > 0.94 ? "needs_review" : roll > 0.62 ? "ai_extracted" : "verified";
+    const confidence =
+      state === "needs_review" ? 0.6 + rng() * 0.22 : 0.9 + rng() * 0.09;
+    const docId = `doc-petrov-exp-${i}`;
+
+    lines.push({
+      id: `Sch-${20 + i}`,
+      section: "Adjustments & deductions",
+      label,
+      amount,
+      state,
+      confidence,
+      editable: true,
+      provenance: {
+        kind: "document",
+        documentId: docId,
+        citation: `Expense schedule · ${label} · line ${20 + i}`,
+        page: 1 + Math.floor(i / 12),
+        boxId: `exp_${i}_total`,
+      },
+      aiSuggestion:
+        state === "needs_review"
+          ? {
+              value: amount,
+              confidence,
+              rationale:
+                "Several receipts in this category were photographed together; the totals could not be separated with confidence.",
+              corroboration: "Prior-year total for this category was within 15%.",
+            }
+          : undefined,
+      pipeline: [
+        { actor: "ai", actorName: "AI", status: state === "needs_review" ? "attention" : "done", note: `Read at ${Math.round(confidence * 100)}%` },
+        { actor: "preparer", actorName: "Jordan Reyes", status: state === "verified" ? "done" : "waiting", note: state === "verified" ? "Verified" : undefined },
+        { actor: "reviewer", actorName: "Dana Whitfield", status: "waiting" },
+      ],
+      history: [],
+    });
+  });
+
+  return lines;
+}
+
+function generateBusinessDocuments(): SourceDocument[] {
+  const rng = seeded(447733);
+  return EXPENSE_CATEGORIES.map((label, i) => {
+    const amount = Math.round((900 + rng() * 46_000) / 10) * 10;
+    const low = rng() > 0.88;
+    return {
+      id: `doc-petrov-exp-${i}`,
+      returnId: "ret-petrov-2025",
+      type: "receipt" as const,
+      title: `${label} — supporting receipts`,
+      issuer: "Petrov Design Studio",
+      taxYear: 2025,
+      uploadedBy: "Elena Petrov",
+      uploadedAt: "2026-03-14T11:20:00",
+      pages: 1 + Math.floor(rng() * 5),
+      scanQuality: low ? ("low" as const) : ("clean" as const),
+      feedsLines: [`Sch-${20 + i}`],
+      boxes: [
+        { id: `exp_${i}_payee`, label: "Category", value: label },
+        {
+          id: `exp_${i}_total`,
+          label: "Total for the year",
+          value: `$${amount.toLocaleString("en-US")}.00`,
+          confidence: low ? 0.68 : 0.96,
+          uncertain: low,
+          wide: true,
+        },
+      ],
+    };
+  });
+}
+
 /* -------------------------------------------------------------------------- */
 /* Readiness                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -1012,6 +1143,9 @@ export function computeReadiness(lines: ReturnLine[], openItems: number) {
 /* -------------------------------------------------------------------------- */
 /* The hero returns                                                            */
 /* -------------------------------------------------------------------------- */
+
+/** The hand-authored K-1 lines plus the generated expense schedule. */
+const PETROV_ALL_LINES: ReturnLine[] = [...PETROV_LINES, ...generateBusinessLines()];
 
 export const HERO_RETURNS: TaxReturn[] = [
   {
@@ -1083,8 +1217,8 @@ export const HERO_RETURNS: TaxReturn[] = [
     reviewerName: "Dana Whitfield",
     dueDate: "2026-04-15",
     lastActivity: "2026-03-24T14:20:00",
-    lines: PETROV_LINES,
-    readiness: computeReadiness(PETROV_LINES, 1),
+    lines: PETROV_ALL_LINES,
+    readiness: computeReadiness(PETROV_ALL_LINES, 1),
     outcome: { kind: "owed", amount: 18400, provisional: true },
   },
 ];
