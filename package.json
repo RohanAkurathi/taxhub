@@ -1,11 +1,18 @@
 {
   "name": "taxhub",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "AI-powered tax platform prototype where every number on a return traces back to its source document",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
+    "setup": "npm install && npm run dev",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "preview": "next build && next start",
+    "check": "tsc --noEmit && eslint src",
     "lint": "eslint"
   },
   "dependencies": {

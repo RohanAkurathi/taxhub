@@ -2,8 +2,39 @@
 
 A prototype client-and-CPA tax platform, built for the GreenGrowth AI Engineer case study.
 
-**Live:** _(add your Vercel URL here)_
-**Walkthrough video:** _(add link here)_
+**Live demo:** _(add your Vercel URL here)_ · **Walkthrough video:** _(add link here)_
+
+---
+
+## Run it
+
+One command. Node 20 or newer is the only requirement.
+
+```bash
+git clone https://github.com/RohanAkurathi/taxhub.git && cd taxhub && npm run setup
+```
+
+That installs dependencies and starts the dev server at **http://localhost:3000**.
+
+Already cloned? Just `npm run setup`. Already installed? Just `npm run dev`.
+
+### Or run it without installing anything
+
+| | |
+| --- | --- |
+| **Deploy your own copy** | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/RohanAkurathi/taxhub) |
+| **Open in a browser IDE** | [github.dev](https://github.dev/RohanAkurathi/taxhub) · [Codespaces](https://codespaces.new/RohanAkurathi/taxhub) |
+
+There is no database, no API keys, and no environment variables. Every screen runs
+off hardcoded data, so a fresh clone works immediately and offline.
+
+### Other commands
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Dev server with hot reload |
+| `npm run preview` | Production build, then serve it |
+| `npm run check` | TypeScript and ESLint (both are clean) |
 
 ---
 
@@ -72,14 +103,14 @@ The brief asked for this explicitly, so here it is without hedging.
 - **The state machine on every value** — nine states, defined once in
   `src/lib/design.ts` and rendered from that table everywhere. This is what stops
   "needs review" looking one way on the dashboard and another inside a return.
-- **The tax maths.** `src/lib/calc.ts` implements the 2025 single-filer brackets
+- **The tax math.** `src/lib/calc.ts` implements the 2025 single-filer brackets
   and a dependency graph across the 1040. When you confirm line 2b, the
   recalculation is genuinely computed — that is why the refund moves by $42 and
   not by a number I typed in.
 - **The audit trail.** Values are never mutated blindly; every change appends a
   history entry with actor, action, and before/after. The uploaded document is
   treated as immutable.
-- **Prioritisation.** `computePriority` ranks 240 returns by deadline pressure,
+- **Prioritization.** `computePriority` ranks 240 returns by deadline pressure,
   days blocked, and whose move it is. Every card shows the reason for its rank,
   so the ordering is arguable rather than magic.
 - **Search and filtering** over the full 240, with filter state in the URL.
@@ -99,7 +130,7 @@ The brief asked for this explicitly, so here it is without hedging.
 | 05 | Role-aware experiences | Shell + role switcher | One skeleton; role changes which rooms exist. Permissions are communicated by architecture, not by an error after a click. Includes the firm employee who is also a client of the firm. |
 | 06 | Return status & progress | `STAGE` table, client journey | One pipeline, two vocabularies, rendered from the same value — so they cannot drift. Staff read "In preparation"; the client reads "We're preparing your return". |
 | 07 | An actionable dashboard | `/dashboard` | Columns are **ownership**, not process stage, because the only question that matters at 8am is whose move it is. Ranking is explainable on every card. Truncation is always stated. |
-| 08 | Clickable vs editable | `/design-system` + everywhere | One hue per concept, and colour is never the only signal — every state also carries a glyph and a word, so it survives greyscale. A locked field renders as text with a reason, never a disabled input, because a greyed-out box invites clicking. |
+| 08 | Clickable vs editable | `/design-system` + everywhere | One hue per concept, and color is never the only signal — every state also carries a glyph and a word, so it survives greyscale. A locked field renders as text with a reason, never a disabled input, because a greyed-out box invites clicking. |
 | 09 | Complexity made navigable | `/returns`, return outline | 240 returns and a full 1040 stay navigable through progressive disclosure, sectioning, and filters that are lenses rather than defaults. The return shows **all** lines by default — a preparer must be able to sign their name to every one. |
 | 10 | Trustworthy AI | Inspector, warnings, confirm gate | Confidence is tiered, not dumped. Below 85% the AI may not populate a field unattended, and confirming is gated behind clicking the value on the source. Every suggestion carries a rationale and independent corroboration. |
 
@@ -147,24 +178,14 @@ The honest list, in the order I would tackle it:
 
 ---
 
-## Running it
-
-```bash
-npm install
-npm run dev
-```
-
-Built with Next.js 16, React 19, TypeScript and Tailwind v4. No other runtime
-dependencies.
-
-### Notable files
+## Notable files
 
 | File | Why it matters |
 | --- | --- |
-| `src/lib/types.ts` | The domain model. Provenance is the centre of it. |
+| `src/lib/types.ts` | The domain model. Provenance is the center of it. |
 | `src/lib/design.ts` | The interaction system and status vocabulary, as data. |
 | `src/lib/mockAI.ts` | The simulated AI and its contract. |
-| `src/lib/calc.ts` | Real bracket maths and the recalculation graph. |
+| `src/lib/calc.ts` | Real bracket math and the recalculation graph. |
 | `src/lib/store.tsx` | State, mutations, and the audit trail. |
 | `src/components/return/Inspector.tsx` | Traceability, rendered five ways. |
 

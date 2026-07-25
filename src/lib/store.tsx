@@ -92,6 +92,8 @@ interface Store {
   sendMessage: (threadId: string, body: string, visibility: Visibility) => void;
   resolveRequest: (threadId: string, requestId: string, answer?: string) => void;
   remindRequest: (threadId: string, requestId: string) => void;
+  /** Requests already chased this session, so nobody nudges twice. */
+  remindedRequests: string[];
 
   /* Client side (challenge 03) */
   completeTask: (taskId: string) => void;
@@ -120,6 +122,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<ClientTask[]>(CLIENT_TASKS);
   const [lastChanges, setLastChanges] = useState<RecalcChange[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [remindedRequests, setRemindedRequests] = useState<string[]>([]);
 
   const account =
     acting.kind === "self" ? CLIENT_ACCOUNTS[acting.as] : CLIENT_ACCOUNTS.reyes;
@@ -456,18 +459,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         pushToast({ title: "Request resolved", tone: "ok" });
       }
     },
-    [pushToast, threads]
+    [pushToast, threads, returns]
   );
 
   const remindRequest = useCallback(
-    (_threadId: string, _requestId: string) => {
+    (threadId: string, requestId: string) => {
+      // Recording which request was chased is what would drive "reminded 2h
+      // ago" and stop two people nudging the same client on the same day.
+      setRemindedRequests((cur) =>
+        cur.includes(requestId) ? cur : [...cur, requestId]
+      );
+      const thread = THREADS_LOOKUP(threads, threadId);
+      const request = thread?.items.find(
+        (i): i is Extract<ThreadItem, { kind: "request" }> =>
+          i.kind === "request" && i.id === requestId
+      );
       pushToast({
         title: "Reminder sent",
-        detail: "The client will get an email and a portal notification.",
+        detail: request
+          ? `${request.title} — the client will get an email and a portal notification.`
+          : "The client will get an email and a portal notification.",
         tone: "info",
       });
     },
-    [pushToast]
+    [pushToast, threads]
   );
 
   const completeTask = useCallback(
@@ -513,6 +528,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sendMessage,
       resolveRequest,
       remindRequest,
+      remindedRequests,
       completeTask,
       lastChanges,
       clearChanges: () => setLastChanges([]),
@@ -536,6 +552,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sendMessage,
       resolveRequest,
       remindRequest,
+      remindedRequests,
       completeTask,
       lastChanges,
       toasts,
