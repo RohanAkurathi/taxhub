@@ -150,8 +150,9 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
         </div>
       }
     >
+      <div className="flex h-full flex-col">
       {/* Return-level summary ------------------------------------------- */}
-      <div className="flex flex-wrap items-center gap-4 border-b border-hair bg-panel px-5 py-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-hair bg-panel px-5 py-3">
         <Grade grade={ret.readiness.grade} />
         <div className="min-w-[220px] flex-1">
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
@@ -206,9 +207,9 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
         </div>
       )}
 
-      <div className="flex items-start">
+      <div className="flex min-h-0 flex-1 items-stretch">
         {/* Section outline ---------------------------------------------- */}
-        <nav className="w-44 shrink-0 border-r border-line py-4" aria-label="Return sections">
+        <nav className="app-scroll w-44 shrink-0 border-r border-line py-4" aria-label="Return sections">
           <SectionLabel className="px-4 pb-1.5">Return outline</SectionLabel>
           <ul>
             <li>
@@ -271,8 +272,8 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
         </nav>
 
         {/* The return itself -------------------------------------------- */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-3 border-b border-hair px-5 py-2">
+        <div className="app-scroll min-w-0 flex-1">
+          <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-hair bg-canvas px-5 py-2">
             <SectionLabel>
               {onlyAttention ? "Lines needing attention" : "Every line on this return"}
             </SectionLabel>
@@ -314,6 +315,7 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
         </div>
 
         {selected && <Inspector ret={ret} line={selected} onSelectLine={selectLine} />}
+      </div>
       </div>
     </Shell>
   );

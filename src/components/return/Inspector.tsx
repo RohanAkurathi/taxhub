@@ -76,7 +76,7 @@ export function Inspector({
   const confirmBlocked = lowConfidence && !checkedEvidence;
 
   return (
-    <aside className="w-[340px] shrink-0 overflow-y-auto border-l border-line bg-panel px-5 py-5">
+    <aside className="app-scroll w-[340px] shrink-0 border-l border-line bg-panel px-5 py-5">
       <h2 className="text-[15px] font-semibold leading-snug">
         <span className="text-faint">Line {line.id}</span> · {line.label}
       </h2>

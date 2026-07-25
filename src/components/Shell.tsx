@@ -100,7 +100,7 @@ export function Shell({
   const reviewCount = returns.filter((r) => r.stage === "in_review").length;
 
   return (
-    <div className="flex min-h-screen flex-col bg-ground">
+    <div className="flex h-screen flex-col overflow-hidden bg-ground">
       {/* Top bar ---------------------------------------------------------- */}
       <header className="flex items-center gap-3 border-b border-line bg-canvas px-4 py-2.5">
         <Link href={ROLE[role].home} className="flex items-center gap-2">
@@ -257,41 +257,53 @@ export function Shell({
         </div>
       )}
 
-      <div className="flex flex-1 items-stretch">
-        {/* Sidebar ------------------------------------------------------- */}
-        <aside className="w-44 shrink-0 border-r border-line bg-panel py-3">
-          <ul>
-            {nav.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href + "/"));
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cx(
-                      "flex items-center gap-2.5 px-4 py-2 text-sm transition-colors",
-                      active
-                        ? "border-r-2 border-accent bg-accentsoft font-medium text-accentink"
-                        : "text-muted hover:bg-locksoft hover:text-ink"
-                    )}
-                  >
-                    <NavIcon name={item.icon} />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+      <div className="flex min-h-0 flex-1">
+        {/* Sidebar --------------------------------------------------------
+            Given real presence rather than a faint list: a titled rail with a
+            pill-shaped active state, so it reads as the app's spine instead of
+            something easy to forget is there. */}
+        <aside className="flex w-52 shrink-0 flex-col border-r border-line bg-panel">
+          <nav aria-label="Sections" className="app-scroll flex-1 px-3 py-4">
+            <p className="eyebrow px-2 pb-2">
+              {viewingAsSelf ? "Your return" : "Firm"}
+            </p>
+            <ul className="space-y-0.5">
+              {nav.map((item) => {
+                const active =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href + "/"));
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cx(
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                        active
+                          ? "bg-accent font-medium text-white"
+                          : "text-muted hover:bg-locksoft hover:text-ink"
+                      )}
+                    >
+                      <NavIcon name={item.icon} />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-          <p className="mt-6 border-t border-line px-4 pt-3 text-[11px] leading-relaxed text-faint">
+          {/* Anchored to the bottom of the rail, not trailing off down an
+              arbitrarily long page. */}
+          <p className="shrink-0 border-t border-line px-5 py-3 text-[11px] leading-relaxed text-faint">
             {viewingAsSelf
               ? "As a client you see four rooms. Nothing here hints at tools you cannot open."
               : `${ROLE[role].label}: ${ROLE[role].description.toLowerCase()}.`}
           </p>
         </aside>
 
-        <main className="min-w-0 flex-1">{children}</main>
+        {/* Only the content scrolls, so the frame never drifts off screen. */}
+        <main className="app-scroll min-w-0 flex-1">{children}</main>
       </div>
 
       <ToastRail />

@@ -263,6 +263,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
         )}
 
+        {/* What is outstanding, before any scrolling ---------------------- */}
+        <OpenSummary
+          entries={visibleEntries}
+          clientView={clientView}
+          firstName={firstName}
+        />
+
         {/* Conversation -------------------------------------------------- */}
         <div className="mt-6 space-y-6">
           {days.map((day) => (
@@ -302,6 +309,83 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         </div>
       </div>
     </Shell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The answer to "what does this conversation actually need from anyone",
+ * stated before a single message is read.
+ *
+ * A thread is a record of what happened; it is a poor way to find out what is
+ * outstanding, because the open item might be six messages up. This strip
+ * carries that separately, in one sentence per item, naming the person who
+ * owes it.
+ */
+function OpenSummary({
+  entries,
+  clientView,
+  firstName,
+}: {
+  entries: Entry[];
+  clientView: boolean;
+  firstName: string;
+}) {
+  const open = entries
+    .map((e) => e.item)
+    .filter(
+      (i): i is Extract<ThreadItem, { kind: "request" }> =>
+        i.kind === "request" && i.status !== "resolved"
+    );
+
+  if (!open.length) {
+    return (
+      <div className="mt-5 rounded-lg border border-okedge bg-oksoft px-3.5 py-2.5 text-sm text-ok">
+        <span className="font-medium">Nothing outstanding.</span>{" "}
+        {clientView
+          ? "There is nothing we need from you right now."
+          : `Nothing is waiting on you or on ${firstName}.`}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-5 rounded-xl border border-warnedge bg-[#fffdf6] p-3.5">
+      <SectionLabel className="text-warn">
+        {clientView
+          ? open.length === 1
+            ? "One thing needs you"
+            : `${open.length} things need you`
+          : open.length === 1
+          ? "One thing is outstanding"
+          : `${open.length} things are outstanding`}
+      </SectionLabel>
+      <ul className="mt-2 space-y-1.5">
+        {open.map((r) => {
+          const who = clientView
+            ? "You"
+            : r.owner === "client"
+            ? firstName
+            : r.owner === "reviewer"
+            ? "The reviewer"
+            : "You";
+          return (
+            <li key={r.id} className="flex items-baseline gap-2 text-sm leading-snug">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warnedge" />
+              <span>
+                <span className="font-medium">{who}</span>
+                <span className="text-muted">
+                  {" "}
+                  — {r.title.replace(/\?$/, "")} · asked{" "}
+                  {relativeTime(r.askedAt)}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -364,7 +448,14 @@ function DayItems({
         if (item.visibility === "internal")
           return <InternalNote key={item.id} item={item} />;
 
-        return <Bubble key={item.id} item={item} clientView={clientView} />;
+        return (
+          <Bubble
+            key={item.id}
+            item={item}
+            clientView={clientView}
+            firstName={firstName}
+          />
+        );
       })}
     </>
   );
@@ -418,17 +509,33 @@ function InternalNote({ item }: { item: Extract<ThreadItem, { kind: "message" }>
 function Bubble({
   item,
   clientView,
+  firstName,
 }: {
   item: Extract<ThreadItem, { kind: "message" }>;
   clientView: boolean;
+  firstName: string;
 }) {
   // "Mine" flips with the view, so the direction of a message is always read
   // from the position of whoever is looking at the screen.
   const fromClient = item.authorRole === "client";
   const mine = clientView ? fromClient : !fromClient;
 
+  /*
+   * Alignment alone is ambiguous the moment you switch views — the same
+   * message moves sides, and a reader has to reconstruct who was talking to
+   * whom. So the direction is also written out. It costs three words and
+   * removes the guesswork entirely.
+   */
+  const direction = fromClient
+    ? clientView
+      ? "You wrote"
+      : `${firstName} wrote`
+    : clientView
+    ? `${item.author} wrote to you`
+    : `${item.author} wrote to ${firstName}`;
+
   return (
-    <div className={cx("flex items-start gap-2", mine && "flex-row-reverse")}>
+    <div className={cx("flex items-start gap-2.5", mine && "flex-row-reverse")}>
       <Avatar name={item.author} size={28} tone={avatarTone(item.authorRole)} />
       <div className="max-w-[80%]">
         <div
@@ -437,13 +544,12 @@ function Bubble({
             mine && "flex-row-reverse"
           )}
         >
-          <span className="font-medium text-ink">{item.author}</span>
-          <span className="text-faint">{ROLE[item.authorRole].label}</span>
+          <span className="font-medium text-ink">{direction}</span>
           <span className="text-faint">{relativeTime(item.at)}</span>
         </div>
         <div
           className={cx(
-            "mt-1 rounded-xl border px-3 py-2 text-sm leading-relaxed",
+            "mt-1 rounded-xl border px-3.5 py-2.5 text-sm leading-relaxed",
             mine
               ? "border-accentedge bg-accentsoft text-ink"
               : "border-line bg-canvas text-ink"
@@ -483,11 +589,45 @@ function RequestCard({
   const status = REQUEST_STATUS[item.status];
   const tone = resolved ? "ok" : item.owner === "client" ? "warn" : "plain";
 
+  if (resolved) {
+    return (
+      <details className="group rounded-lg border border-okedge bg-oksoft/50 px-3.5 py-2.5">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 text-sm marker:content-none">
+          <span className="font-medium text-ok" aria-hidden="true">
+            ✓
+          </span>
+          <span className="font-medium">{item.title}</span>
+          <span className="text-xs text-muted">
+            {clientView ? "done" : "settled"} · {relativeTime(item.resolvedAt ?? item.askedAt)}
+          </span>
+          <span className="ml-auto text-xs text-faint group-open:hidden">details</span>
+        </summary>
+        <p className="mt-2 text-sm leading-relaxed text-muted">{item.detail}</p>
+        {anchor && (
+          <div className="mt-2">
+            <AnchorChip anchor={anchor} returnId={returnId} clientView={clientView} />
+          </div>
+        )}
+        <p className="mt-2 text-xs leading-relaxed text-ok">
+          {item.resolution
+            ? clientView
+              ? "Thanks — we applied your answer to your return."
+              : `${item.resolution.value} was written to line ${item.resolution.writesToLine}, and the flag there is cleared.`
+            : clientView
+            ? "Nothing further is needed from you on this."
+            : "Nothing on the return needed to change."}
+        </p>
+      </details>
+    );
+  }
+
   return (
     <Card tone={tone} className="p-3.5">
       <div className="flex flex-wrap items-center gap-2">
         <Chip tone={status.tone}>{clientView ? status.client : status.staff}</Chip>
-        {!clientView && <OwnerBadge owner={item.owner} />}
+        {/* The status already names the owner once it is settled; a second
+            badge reading "Done" beside "Settled" was pure noise. */}
+        {!clientView && !resolved && <OwnerBadge owner={item.owner} />}
         <span className="ml-auto text-xs text-faint">
           Asked by {item.askedBy} · {relativeTime(item.askedAt)}
         </span>
@@ -500,19 +640,6 @@ function RequestCard({
         <div className="mt-2.5">
           <AnchorChip anchor={anchor} returnId={returnId} clientView={clientView} />
         </div>
-      )}
-
-      {resolved && (
-        <p className="mt-2.5 rounded-lg border border-okedge bg-oksoft px-3 py-2 text-xs leading-relaxed text-ok">
-          <span className="font-semibold">Answered.</span>{" "}
-          {item.resolution
-            ? clientView
-              ? `Thanks — we've applied your answer to your return, and nothing is holding it up any more.`
-              : `${item.resolution.value} was written to line ${item.resolution.writesToLine} on the return, and the flag there is cleared. ${item.resolution.note}`
-            : clientView
-            ? "Thanks — nothing further is needed from you on this."
-            : "Nothing on the return needed to change."}
-        </p>
       )}
 
       {/* Actions. A request with nothing a person can do about it here renders
