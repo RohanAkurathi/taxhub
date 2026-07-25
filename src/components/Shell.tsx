@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ROLE } from "@/lib/design";
@@ -42,6 +43,25 @@ function NavIcon({ name }: { name: string }) {
     >
       {ICONS[name] ?? ICONS.grid}
     </svg>
+  );
+}
+
+/**
+ * Inline feedback while a navigation is in flight.
+ *
+ * A click that produces nothing on screen reads as a broken app, not a slow
+ * one — which is most visible in development, where the dev server compiles
+ * each route the first time it is opened. This marks the link you actually
+ * clicked, so the wait has an obvious cause.
+ */
+function NavPending() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      aria-hidden="true"
+      className="ml-auto h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent opacity-60"
+    />
   );
 }
 
@@ -286,6 +306,7 @@ export function Shell({
                     >
                       <NavIcon name={item.icon} />
                       {item.label}
+                      <NavPending />
                     </Link>
                   </li>
                 );
