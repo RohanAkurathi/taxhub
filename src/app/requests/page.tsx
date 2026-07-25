@@ -10,12 +10,13 @@ import {
   EmptyState,
   OwnerBadge,
   SectionLabel,
+  Grade,
   cx,
 } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { daysSince, relativeTime , personByName } from "@/lib/mockData";
 import { agingTone, returnSummaryById } from "@/lib/mockVolume";
-import type { Owner, RequestStatus, ThreadAnchor } from "@/lib/types";
+import type { Owner, RequestStatus, ThreadAnchor, TaxReturn, ReturnLine } from "@/lib/types";
 
 /* ---------------------------------------------------------------------------
    Open items — the firm-wide answer to "what is outstanding, and who owes it".
@@ -90,7 +91,8 @@ function AgeChip({ days }: { days: number }) {
 }
 
 export default function OpenItemsPage() {
-  const { threads, getReturn, remindRequest, resolveRequest } = useStore();
+  const { threads, getReturn, remindRequest, resolveRequest, returns, role } =
+    useStore();
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const items = useMemo<OpenItem[]>(() => {
@@ -132,8 +134,35 @@ export default function OpenItemsPage() {
       .sort((a, b) => a.askedAt.localeCompare(b.askedAt)); // oldest first
   }, [threads, getReturn]);
 
+  const isReviewer = role === "reviewer";
+
+  /*
+   * A reviewer has no relationship with the client — the preparer owns that.
+   * Handing Dana a "send reminder" button pointed at Sarah Chen would invite
+   * her to reach around the person who actually holds the relationship, which
+   * is precisely the fragmentation this product exists to remove. So client
+   * items stay visible to her, because a reviewer does need to know why a
+   * return is stuck, but they arrive as context rather than as work.
+   */
   const onClients = items.filter((i) => i.owner === "client");
   const onFirm = items.filter((i) => i.owner !== "client");
+
+  /** Returns sitting with the reviewer, awaiting sign-off. */
+  const awaitingApproval = useMemo(
+    () => returns.filter((r) => r.stage === "in_review"),
+    [returns]
+  );
+
+  /** Lines this reviewer has flagged and sent back to a preparer. */
+  const sentBack = useMemo(
+    () =>
+      returns.flatMap((r) =>
+        r.lines
+          .filter((l) => l.flag && l.flag.byRole === "reviewer")
+          .map((l) => ({ ret: r, line: l }))
+      ),
+    [returns]
+  );
   const oldest = items.reduce(
     (max, i) => (i.daysWaiting > max ? i.daysWaiting : max),
     0
@@ -150,24 +179,45 @@ export default function OpenItemsPage() {
       }
     >
       <div className="mx-auto max-w-5xl px-6 py-8">
-        <SectionLabel>Across the firm</SectionLabel>
+        <SectionLabel>{isReviewer ? "Your review work" : "Across the firm"}</SectionLabel>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Open items</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          Not an inbox. Every row is a piece of work with an owner, an age and one
-          next action — it leaves this list when the work is done, not when someone
-          reads it.
+          {isReviewer
+            ? "Not an inbox. What is waiting on your sign-off, and what you have sent back — plus, for context, what the preparers are still chasing."
+            : "Not an inbox. Every row is a piece of work with an owner, an age and one next action — it leaves this list when the work is done, not when someone reads it."}
         </p>
 
         {/* Summary strip -------------------------------------------------- */}
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <Card className="p-3.5">
-            <p className="tnum text-2xl font-semibold">{onClients.length}</p>
-            <p className="mt-0.5 text-sm text-muted">waiting on a client</p>
-          </Card>
-          <Card className="p-3.5">
-            <p className="tnum text-2xl font-semibold">{onFirm.length}</p>
-            <p className="mt-0.5 text-sm text-muted">waiting on the firm</p>
-          </Card>
+          {isReviewer ? (
+            <>
+              <Card className="p-3.5">
+                <p className="tnum text-2xl font-semibold">
+                  {awaitingApproval.length}
+                </p>
+                <p className="mt-0.5 text-sm text-muted">
+                  returns awaiting your sign-off
+                </p>
+              </Card>
+              <Card className="p-3.5">
+                <p className="tnum text-2xl font-semibold">{sentBack.length}</p>
+                <p className="mt-0.5 text-sm text-muted">
+                  lines you sent back
+                </p>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Card className="p-3.5">
+                <p className="tnum text-2xl font-semibold">{onClients.length}</p>
+                <p className="mt-0.5 text-sm text-muted">waiting on a client</p>
+              </Card>
+              <Card className="p-3.5">
+                <p className="tnum text-2xl font-semibold">{onFirm.length}</p>
+                <p className="mt-0.5 text-sm text-muted">waiting on the firm</p>
+              </Card>
+            </>
+          )}
           <Card className="p-3.5">
             <p className="tnum text-2xl font-semibold">
               {items.length ? oldest : "—"}
@@ -194,28 +244,154 @@ export default function OpenItemsPage() {
           </Card>
         ) : (
           <>
-            <Group
-              title="Waiting on a client"
-              caption="We have asked; they have not come back yet. A reminder is the only lever we have."
-              items={onClients}
-              expanded={expanded}
-              setExpanded={setExpanded}
-              onRemind={remindRequest}
-              onResolve={resolveRequest}
-            />
-            <Group
-              title="Waiting on the firm"
-              caption="Ours to move. Nobody is blocking these except us."
-              items={onFirm}
-              expanded={expanded}
-              setExpanded={setExpanded}
-              onRemind={remindRequest}
-              onResolve={resolveRequest}
-            />
+            {isReviewer ? (
+              <>
+                <ApprovalGroup returns={awaitingApproval} />
+                <SentBackGroup entries={sentBack} />
+                <Group
+                  title="The preparer is chasing a client"
+                  caption="Context only. These are why a return is stuck; the preparer owns the client relationship, so the next move is not yours."
+                  items={onClients}
+                  expanded={expanded}
+                  setExpanded={setExpanded}
+                  onRemind={remindRequest}
+                  onResolve={resolveRequest}
+                  readOnly
+                />
+              </>
+            ) : (
+              <>
+                <Group
+                  title="Waiting on a client"
+                  caption="We have asked; they have not come back yet. A reminder is the only lever we have."
+                  items={onClients}
+                  expanded={expanded}
+                  setExpanded={setExpanded}
+                  onRemind={remindRequest}
+                  onResolve={resolveRequest}
+                />
+                <Group
+                  title="Waiting on the firm"
+                  caption="Ours to move. Nobody is blocking these except us."
+                  items={onFirm}
+                  expanded={expanded}
+                  setExpanded={setExpanded}
+                  onRemind={remindRequest}
+                  onResolve={resolveRequest}
+                />
+              </>
+            )}
           </>
         )}
       </div>
     </Shell>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+/** Returns sitting with the reviewer. The work, not a notification about it. */
+function ApprovalGroup({ returns }: { returns: TaxReturn[] }) {
+  return (
+    <section className="mt-8">
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-sm font-semibold">Waiting on your sign-off</h2>
+        <span className="tnum text-sm text-faint">{returns.length}</span>
+      </div>
+      <p className="mt-0.5 text-sm text-muted">
+        Finished work. Nothing here can be filed until you have been through it.
+      </p>
+
+      {returns.length === 0 ? (
+        <Card className="mt-3 px-4 py-5 text-sm text-muted">
+          Your queue is clear.
+        </Card>
+      ) : (
+        <ul className="mt-3 flex flex-col gap-2">
+          {returns.map((r) => {
+            const needing = r.lines.filter(
+              (l) => l.state === "needs_review" || l.state === "flagged"
+            ).length;
+            return (
+              <li key={r.id}>
+                <Card className="flex flex-wrap items-center gap-3 px-4 py-3">
+                  <Grade grade={r.readiness.grade} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/returns/${r.id}`}
+                      className="text-sm font-medium hover:text-accentink hover:underline"
+                    >
+                      {r.clientName}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {r.formType} · {r.taxYear} · prepared by {r.preparerName}
+                      {needing > 0 && ` · ${needing} line${needing === 1 ? "" : "s"} still open`}
+                    </p>
+                  </div>
+                  <Link href={`/returns/${r.id}`}>
+                    <Button size="sm" variant="primary">
+                      Review it
+                    </Button>
+                  </Link>
+                </Card>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** Lines the reviewer flagged. The ball is with the preparer, not the client. */
+function SentBackGroup({
+  entries,
+}: {
+  entries: { ret: TaxReturn; line: ReturnLine }[];
+}) {
+  return (
+    <section className="mt-8">
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-sm font-semibold">You sent these back</h2>
+        <span className="tnum text-sm text-faint">{entries.length}</span>
+      </div>
+      <p className="mt-0.5 text-sm text-muted">
+        Waiting on a preparer to answer. You raised them, so you will see them
+        cleared here.
+      </p>
+
+      {entries.length === 0 ? (
+        <Card className="mt-3 px-4 py-5 text-sm text-muted">
+          You have not sent anything back.
+        </Card>
+      ) : (
+        <ul className="mt-3 flex flex-col gap-2">
+          {entries.map(({ ret, line }) => (
+            <li key={`${ret.id}-${line.id}`}>
+              <Card tone="flag" className="px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {ret.clientName} · line {line.id}
+                  </span>
+                  <Chip tone="flag">with {ret.preparerName.split(" ")[0]}</Chip>
+                  <span className="ml-auto text-xs text-faint">
+                    {relativeTime(line.flag!.at)}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                  &ldquo;{line.flag!.note}&rdquo;
+                </p>
+                <div className="mt-2">
+                  <Link href={`/returns/${ret.id}?line=${encodeURIComponent(line.id)}`}>
+                    <Button size="sm">Open the line</Button>
+                  </Link>
+                </div>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -229,6 +405,7 @@ function Group({
   setExpanded,
   onRemind,
   onResolve,
+  readOnly,
 }: {
   title: string;
   caption: string;
@@ -237,6 +414,7 @@ function Group({
   setExpanded: (id: string | null) => void;
   onRemind: (threadId: string, requestId: string) => void;
   onResolve: (threadId: string, requestId: string) => void;
+  readOnly?: boolean;
 }) {
   return (
     <section className="mt-8">
@@ -262,6 +440,7 @@ function Group({
               }
               onRemind={onRemind}
               onResolve={onResolve}
+              readOnly={readOnly}
             />
           ))}
         </ul>
@@ -278,12 +457,15 @@ function Row({
   onToggle,
   onRemind,
   onResolve,
+  readOnly,
 }: {
   item: OpenItem;
   open: boolean;
   onToggle: () => void;
   onRemind: (threadId: string, requestId: string) => void;
   onResolve: (threadId: string, requestId: string) => void;
+  /** Visible, but not yours to act on — someone else owns the next move. */
+  readOnly?: boolean;
 }) {
   const panelId = `open-item-${item.requestId}`;
   const hot = agingTone(item.daysWaiting) === "hot";
@@ -371,8 +553,12 @@ function Row({
 
           <div className="flex flex-wrap items-center gap-1.5">
             {/* A reminder only means something when the ball is in the client's
-                court; on firm-owned rows we offer the action that closes it. */}
-            {item.owner === "client" ? (
+                court; on firm-owned rows we offer the action that closes it.
+                In read-only mode the row is context — someone else owns the
+                next move, so offering a button would be offering a lie. */}
+            {readOnly ? (
+              <span className="text-xs text-faint">the preparer is chasing this</span>
+            ) : item.owner === "client" ? (
               <Button
                 size="sm"
                 onClick={() => onRemind(item.threadId, item.requestId)}
