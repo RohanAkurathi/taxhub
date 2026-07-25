@@ -204,7 +204,7 @@ function generateSummaries(count: number): ReturnSummary[] {
     const onExtension = rng() > 0.86;
     const dueDate = onExtension ? "2026-10-15" : "2026-04-15";
 
-    const stuck = owner === "client" && rng() > 0.45;
+    const stuck = owner === "client" && rng() > 0.73;
     const blockedDays = stuck ? 1 + Math.floor(rng() * 12) : undefined;
     const blockedReason = stuck
       ? stage === "ready_to_file"
@@ -215,7 +215,7 @@ function generateSummaries(count: number): ReturnSummary[] {
       : undefined;
 
     const openItems =
-      stage === "filed" ? 0 : Math.floor(rng() * (stuck ? 3 : 2)) + (stuck ? 1 : 0);
+      stage === "filed" ? 0 : (stuck ? 1 : 0) + (rng() > 0.75 ? 1 : 0);
 
     const baseScore =
       stage === "filed"

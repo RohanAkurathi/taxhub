@@ -13,7 +13,7 @@ import {
 import { Shell } from "@/components/Shell";
 import { Button, Card, EmptyState, Grade, OwnerBadge, SectionLabel, cx } from "@/components/ui";
 import { OWNER_LABEL, STAGE, STAGE_ORDER } from "@/lib/design";
-import { daysUntil, relativeTime } from "@/lib/mockData";
+import { daysUntil } from "@/lib/mockData";
 import { ALL_RETURNS, filterReturns, type ReturnFilters } from "@/lib/mockVolume";
 import { useStore } from "@/lib/store";
 import type { FormType, Owner, ReturnSummary, Stage } from "@/lib/types";
@@ -90,6 +90,7 @@ function ReturnsBrowser() {
   }));
   const [grouped, setGrouped] = useState(params.get("group") === "stage");
   const [limit, setLimit] = useState(PAGE);
+  const [moreFilters, setMoreFilters] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -305,21 +306,13 @@ function ReturnsBrowser() {
           />
         </div>
 
-        {/* Filter dimensions -------------------------------------------- */}
+        {/* Filter dimensions --------------------------------------------
+            One question leads: whose move is it. Stage and form matter, but
+            showing every facet at once made the controls heavier than the
+            table they filter — the classic way a power screen stops being
+            approachable (challenge 09 asks for both at once). */}
         <div className="mt-3 space-y-2 border-t border-hair pt-3">
-          <FilterRow label="Stage">
-            {STAGE_ORDER.map((s) => (
-              <FilterPill
-                key={s}
-                active={(f.stages ?? []).includes(s)}
-                count={counts.stage[s] ?? 0}
-                onClick={() => setF((c) => ({ ...c, stages: toggle(c.stages, s) }))}
-                label={STAGE[s].staff}
-              />
-            ))}
-          </FilterRow>
-
-          <FilterRow label="Whose move">
+          <FilterRow label="Show">
             {OWNER_VALUES.map((o) => (
               <FilterPill
                 key={o}
@@ -329,26 +322,11 @@ function ReturnsBrowser() {
                 label={OWNER_LABEL[o]}
               />
             ))}
-          </FilterRow>
-
-          <FilterRow label="Form">
-            {FORM_VALUES.map((t) => (
-              <FilterPill
-                key={t}
-                active={(f.formTypes ?? []).includes(t)}
-                count={counts.form[t] ?? 0}
-                onClick={() => setF((c) => ({ ...c, formTypes: toggle(c.formTypes, t) }))}
-                label={t}
-              />
-            ))}
-          </FilterRow>
-
-          <FilterRow label="Shortcuts">
             <FilterPill
               active={Boolean(f.blockedOnly)}
               count={counts.blocked}
               onClick={() => setF((c) => ({ ...c, blockedOnly: !c.blockedOnly }))}
-              label="Blocked only"
+              label="Blocked"
             />
             <FilterPill
               active={f.scope === "mine"}
@@ -356,9 +334,46 @@ function ReturnsBrowser() {
               onClick={() =>
                 setF((c) => ({ ...c, scope: c.scope === "mine" ? "team" : "mine" }))
               }
-              label="Prepared by me"
+              label="Mine"
             />
+            <button
+              onClick={() => setMoreFilters((v) => !v)}
+              aria-expanded={moreFilters}
+              className="rounded-full px-2.5 py-0.5 text-xs font-medium text-accentink hover:bg-accentsoft"
+            >
+              {moreFilters ? "Fewer filters" : "More filters"}
+            </button>
           </FilterRow>
+
+          {moreFilters && (
+            <>
+              <FilterRow label="Stage">
+                {STAGE_ORDER.map((st) => (
+                  <FilterPill
+                    key={st}
+                    active={(f.stages ?? []).includes(st)}
+                    count={counts.stage[st] ?? 0}
+                    onClick={() => setF((c) => ({ ...c, stages: toggle(c.stages, st) }))}
+                    label={STAGE[st].staff}
+                  />
+                ))}
+              </FilterRow>
+
+              <FilterRow label="Form">
+                {FORM_VALUES.map((t) => (
+                  <FilterPill
+                    key={t}
+                    active={(f.formTypes ?? []).includes(t)}
+                    count={counts.form[t] ?? 0}
+                    onClick={() =>
+                      setF((c) => ({ ...c, formTypes: toggle(c.formTypes, t) }))
+                    }
+                    label={t}
+                  />
+                ))}
+              </FilterRow>
+            </>
+          )}
         </div>
 
         {/* Active filters ------------------------------------------------ */}
@@ -436,10 +451,7 @@ function ReturnsBrowser() {
                   <th scope="col" className="px-3 py-2 text-center font-semibold" aria-sort={f.sort === "readiness" ? "ascending" : "none"}>
                     Readiness
                   </th>
-                  <th scope="col" className="px-3 py-2 text-right font-semibold">Open items</th>
-                  <th scope="col" className="px-4 py-2 text-right font-semibold" aria-sort={f.sort === "activity" ? "descending" : "none"}>
-                    Last activity
-                  </th>
+                  <th scope="col" className="px-4 py-2 text-right font-semibold">Open items</th>
                 </tr>
               </thead>
 
@@ -550,8 +562,19 @@ function Row({ r }: { r: ReturnSummary }) {
           {r.clientName}
         </Link>
         {blocked ? (
-          <span className="mt-0.5 block max-w-[22rem] truncate text-[11px] text-danger">
-            Stuck {r.blockedDays} days · {r.blockedReason}
+          <span className="mt-0.5 block max-w-[22rem] truncate text-[11px] text-muted">
+            <span
+              className={
+                (r.blockedDays ?? 0) >= 8
+                  ? "font-medium text-danger"
+                  : (r.blockedDays ?? 0) >= 4
+                  ? "font-medium text-warn"
+                  : "font-medium"
+              }
+            >
+              Stuck {r.blockedDays} days
+            </span>{" "}
+            · {r.blockedReason}
           </span>
         ) : (
           r.priorityReason !== "on track" && (
@@ -594,9 +617,6 @@ function Row({ r }: { r: ReturnSummary }) {
         )}
       </td>
 
-      <td className="px-4 py-2 text-right whitespace-nowrap text-xs text-muted">
-        {relativeTime(r.lastActivity)}
-      </td>
     </tr>
   );
 }

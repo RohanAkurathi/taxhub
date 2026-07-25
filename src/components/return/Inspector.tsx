@@ -589,37 +589,61 @@ function ProvenanceView({
   }
 
   if (p.kind === "calculation") {
+    /*
+     * Rendered as an adding-machine tape rather than a flow diagram: each
+     * input on its own row with its operator, a rule, then the result. This
+     * is how the arithmetic would look worked in the margin of a paper
+     * return, which is the visual language the documents already use — and
+     * every row is a working link to the line it names.
+     */
+    const opFor = (lineId: string, index: number): string => {
+      if (index === 0) return "";
+      const at = p.formula.indexOf(lineId);
+      if (at === -1) return "+";
+      const before = p.formula.slice(0, at);
+      return /[−-]\s*(Line\s*)?$/.test(before) ? "−" : "+";
+    };
+    const singleInput = p.inputs.length === 1;
+
     return (
-      <div>
-        <p className="mb-2 text-xs text-muted">{p.formula}</p>
-        <ol className="space-y-0">
-          {p.inputs.map((inp, i) => (
-            <li key={inp.lineId} className="flex gap-2.5">
-              <span
-                className={cx(
-                  "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-                  i === p.inputs.length - 1 ? "bg-accent" : "bg-accentedge"
-                )}
-              />
-              <div className="flex-1 border-l border-accentedge pb-3 pl-3.5 last:border-transparent last:pb-0">
-                <button
-                  onClick={() => onSelectLine(inp.lineId)}
-                  className="text-left text-xs font-medium hover:text-accentink hover:underline"
-                >
-                  Line {inp.lineId} · {inp.label}
-                </button>
-                <p className="tnum text-xs text-muted">{formatMoney(inp.amount)}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <div className="mt-1 flex gap-2.5">
-          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-ok" />
-          <div className="pl-3.5">
-            <p className="text-xs font-medium">This line</p>
-            <p className="tnum text-xs text-muted">{formatMoney(line.amount)}</p>
-          </div>
-        </div>
+      <div className="overflow-hidden rounded-sm border border-lockedge bg-white">
+        <table className="w-full text-xs">
+          <tbody>
+            {p.inputs.map((inp, i) => (
+              <tr key={inp.lineId}>
+                <td className="tnum w-5 py-1.5 pl-3 text-muted" aria-hidden="true">
+                  {singleInput ? "" : opFor(inp.lineId, i)}
+                </td>
+                <td className="py-1.5 pr-2">
+                  <button
+                    onClick={() => onSelectLine(inp.lineId)}
+                    className="text-left font-medium text-ink hover:text-accentink hover:underline"
+                  >
+                    {inp.label}
+                  </button>
+                  <span className="ml-1.5 text-faint">line {inp.lineId}</span>
+                </td>
+                <td className="tnum py-1.5 pr-3 text-right text-ink">
+                  {formatMoney(inp.amount)}
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <td className="border-t border-ink/60 py-1.5 pl-3 font-medium" aria-hidden="true">
+                =
+              </td>
+              <td className="border-t border-ink/60 py-1.5 pr-2 font-semibold">
+                {line.label}
+              </td>
+              <td className="tnum border-t border-ink/60 py-1.5 pr-3 text-right font-semibold">
+                {formatMoney(line.amount)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="border-t border-hair bg-panel px-3 py-1.5 text-[11px] text-faint">
+          {singleInput ? p.formula : "Recalculates on its own when any input line changes."}
+        </p>
       </div>
     );
   }
