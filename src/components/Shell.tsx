@@ -70,14 +70,29 @@ export interface Crumb {
   href?: string;
 }
 
+/**
+ * The sections of whatever object you are currently inside.
+ *
+ * Global navigation tells you where you can go in the product; it says nothing
+ * about the return you are actually working on. Putting that return's own
+ * sections in the rail is what stops the conversation being a small button
+ * someone has to hunt for in the top bar.
+ */
+export interface ContextNav {
+  label: string;
+  items: { href: string; label: string; icon: string; count?: number; alert?: boolean }[];
+}
+
 export function Shell({
   children,
   crumbs = [],
   right,
+  context,
 }: {
   children: ReactNode;
   crumbs?: Crumb[];
   right?: ReactNode;
+  context?: ContextNav;
 }) {
   const { acting, setActing, role, returns } = useStore();
   const pathname = usePathname();
@@ -312,6 +327,49 @@ export function Shell({
                 );
               })}
             </ul>
+
+            {context && (
+              <div className="mt-6">
+                <p className="eyebrow truncate px-2 pb-2" title={context.label}>
+                  {context.label}
+                </p>
+                <ul className="space-y-0.5">
+                  {context.items.map((item) => {
+                    const active = pathname === item.href;
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          aria-current={active ? "page" : undefined}
+                          className={cx(
+                            "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                            active
+                              ? "bg-accentsoft font-medium text-accentink"
+                              : "text-muted hover:bg-locksoft hover:text-ink"
+                          )}
+                        >
+                          <NavIcon name={item.icon} />
+                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          {item.count !== undefined && item.count > 0 && (
+                            <span
+                              className={cx(
+                                "tnum rounded-full px-1.5 text-[11px] font-semibold",
+                                item.alert
+                                  ? "bg-warnsoft text-warn"
+                                  : "bg-locksoft text-muted"
+                              )}
+                            >
+                              {item.count}
+                            </span>
+                          )}
+                          <NavPending />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
           </nav>
 
           {/* Anchored to the bottom of the rail, not trailing off down an

@@ -105,6 +105,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Shell
       crumbs={crumbs}
+      context={{
+        label: clientName,
+        items: [
+          { href: `/returns/${id}`, label: "Review", icon: "grid", count: ret?.lines.length },
+          { href: `/returns/${id}/documents`, label: "Documents", icon: "doc", count: docs.length },
+          { href: `/returns/${id}/messages`, label: "Conversation", icon: "chat" },
+        ],
+      }}
       right={
         <Chip tone={attentionCount ? "warn" : "ok"}>
           {attentionCount

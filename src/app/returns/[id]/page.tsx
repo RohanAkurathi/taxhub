@@ -18,7 +18,13 @@ import {
   cx,
 } from "@/components/ui";
 import { FIELD_STATE, STAGE, formatMoney } from "@/lib/design";
-import { daysUntil, openRequestsFor, relativeTime, tasksFor } from "@/lib/mockData";
+import {
+  daysUntil,
+  documentsFor,
+  openRequestsFor,
+  relativeTime,
+  tasksFor,
+} from "@/lib/mockData";
 import { returnSummaryById } from "@/lib/mockVolume";
 import { getWarnings } from "@/lib/mockAI";
 import { useStore } from "@/lib/store";
@@ -134,6 +140,25 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
         { label: `${ret.clientName} · ${ret.formType} (${ret.taxYear})` },
         { label: "Review" },
       ]}
+      context={{
+        label: ret.clientName,
+        items: [
+          { href: `/returns/${ret.id}`, label: "Review", icon: "grid", count: ret.lines.length },
+          {
+            href: `/returns/${ret.id}/documents`,
+            label: "Documents",
+            icon: "doc",
+            count: documentsFor(ret.id).length,
+          },
+          {
+            href: `/returns/${ret.id}/messages`,
+            label: "Conversation",
+            icon: "chat",
+            count: openRequests.length,
+            alert: openRequests.length > 0,
+          },
+        ],
+      }}
       right={
         <div className="flex items-center gap-2">
           {ret.blocked && <Chip tone="danger">Blocked</Chip>}
@@ -142,14 +167,6 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
               ? `${attentionLines.length} need${attentionLines.length === 1 ? "s" : ""} attention`
               : "Nothing outstanding"}
           </Chip>
-          <Link href={`/returns/${ret.id}/documents`}>
-            <Button size="sm">Documents</Button>
-          </Link>
-          <Link href={`/returns/${ret.id}/messages`}>
-            <Button size="sm">
-              Conversation{openRequests.length > 0 && ` · ${openRequests.length}`}
-            </Button>
-          </Link>
         </div>
       }
     >

@@ -14,7 +14,7 @@ import {
   cx,
 } from "@/components/ui";
 import { ROLE, STAGE } from "@/lib/design";
-import { daysSince, relativeTime } from "@/lib/mockData";
+import { daysSince, documentsFor, relativeTime } from "@/lib/mockData";
 import { returnSummaryById } from "@/lib/mockVolume";
 import { useStore } from "@/lib/store";
 import type {
@@ -226,7 +226,29 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <Shell crumbs={crumbs} right={right}>
+    <Shell
+      crumbs={crumbs}
+      context={{
+        label: clientName,
+        items: [
+          { href: `/returns/${id}`, label: "Review", icon: "grid", count: ret?.lines.length },
+          {
+            href: `/returns/${id}/documents`,
+            label: "Documents",
+            icon: "doc",
+            count: documentsFor(id).length,
+          },
+          {
+            href: `/returns/${id}/messages`,
+            label: "Conversation",
+            icon: "chat",
+            count: openCount,
+            alert: openCount > 0,
+          },
+        ],
+      }}
+      right={right}
+    >
       <div className="mx-auto max-w-3xl px-6 py-7">
         {/* Header ------------------------------------------------------- */}
         <SectionLabel>Conversation</SectionLabel>
@@ -339,52 +361,31 @@ function OpenSummary({
         i.kind === "request" && i.status !== "resolved"
     );
 
-  if (!open.length) {
-    return (
-      <div className="mt-5 rounded-lg border border-okedge bg-oksoft px-3.5 py-2.5 text-sm text-ok">
-        <span className="font-medium">Nothing outstanding.</span>{" "}
-        {clientView
-          ? "There is nothing we need from you right now."
-          : `Nothing is waiting on you or on ${firstName}.`}
-      </div>
-    );
-  }
+  if (!open.length) return null;
 
   return (
-    <div className="mt-5 rounded-xl border border-warnedge bg-[#fffdf6] p-3.5">
-      <SectionLabel className="text-warn">
-        {clientView
-          ? open.length === 1
-            ? "One thing needs you"
-            : `${open.length} things need you`
-          : open.length === 1
-          ? "One thing is outstanding"
-          : `${open.length} things are outstanding`}
-      </SectionLabel>
-      <ul className="mt-2 space-y-1.5">
-        {open.map((r) => {
-          const who = clientView
-            ? "You"
-            : r.owner === "client"
-            ? firstName
-            : r.owner === "reviewer"
-            ? "The reviewer"
-            : "You";
-          return (
-            <li key={r.id} className="flex items-baseline gap-2 text-sm leading-snug">
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warnedge" />
-              <span>
-                <span className="font-medium">{who}</span>
-                <span className="text-muted">
-                  {" "}
-                  — {r.title.replace(/\?$/, "")} · asked{" "}
-                  {relativeTime(r.askedAt)}
-                </span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="mt-5 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-l-2 border-warnedge bg-warnsoft/40 py-2 pl-3 pr-3 text-sm">
+      <span className="font-medium text-warn">
+        {clientView ? "Needs you:" : "Outstanding:"}
+      </span>
+      {open.map((r, i) => {
+        const who = clientView
+          ? "you"
+          : r.owner === "client"
+          ? firstName
+          : r.owner === "reviewer"
+          ? "the reviewer"
+          : "you";
+        return (
+          <span key={r.id} className="text-muted">
+            {i > 0 && <span className="mr-2 text-lockedge">·</span>}
+            <span className="font-medium text-ink">{r.title.replace(/\?$/, "")}</span>{" "}
+            <span className="text-faint">
+              with {who}, {relativeTime(r.askedAt)}
+            </span>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -487,24 +488,39 @@ function SystemLine({ item }: { item: Extract<ThreadItem, { kind: "system" }> })
 }
 
 function InternalNote({ item }: { item: Extract<ThreadItem, { kind: "message" }> }) {
+  /*
+   * Same anatomy as any other message — avatar, one header line, one bubble —
+   * because it IS a message. What differs is who may read it, so that is what
+   * the color and the label carry. Giving internal notes a different shape
+   * made the thread read as two interleaved systems rather than one
+   * conversation with a visible boundary in it.
+   */
   return (
-    <div className="ml-10 rounded-r-lg border-l-2 border-warnedge bg-warnsoft/50 px-3 py-2">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-        <span aria-hidden="true" className="text-warn">
-          ⊘
-        </span>
-        <span className="font-semibold text-warn">Firm only</span>
-        <span className="text-lockedge" aria-hidden="true">
-          ·
-        </span>
-        <span className="font-medium text-ink">{item.author}</span>
-        <span className="text-faint">{ROLE[item.authorRole].label}</span>
-        <span className="text-faint">{relativeTime(item.at)}</span>
+    <div className="flex items-start gap-2.5">
+      <Avatar name={item.author} size={28} tone="neutral" />
+      <div className="max-w-[80%]">
+        <div className="flex items-baseline gap-2 text-xs">
+          <span className="font-medium text-ink">
+            {item.author} — firm only
+          </span>
+          <span className="text-faint">{relativeTime(item.at)}</span>
+        </div>
+        <div className="mt-1 rounded-xl border border-warnedge bg-warnsoft/60 px-3.5 py-2.5 text-sm leading-relaxed text-ink">
+          {withMentions(item.body)}
+        </div>
+        <p className="mt-1 text-[11px] text-warn">
+          Not visible to {ROLE.client.label.toLowerCase()}s
+        </p>
       </div>
-      <p className="mt-1 text-sm leading-relaxed text-ink">{withMentions(item.body)}</p>
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Requests — the bridge between the conversation and the return               */
+/* -------------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------------- */
 
 function Bubble({
   item,
@@ -561,10 +577,6 @@ function Bubble({
     </div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Requests — the bridge between the conversation and the return               */
-/* -------------------------------------------------------------------------- */
 
 function RequestCard({
   item,
