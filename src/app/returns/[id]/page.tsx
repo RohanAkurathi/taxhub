@@ -51,6 +51,18 @@ import {
    available as a filter, but it is a lens, never the default.
 --------------------------------------------------------------------------- */
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/** Formatted by hand, same as the messages page: toLocaleDateString on a page
+ *  rendered on the server and again in the browser risks a hydration mismatch. */
+function formatFiledDate(at: string): string {
+  const d = new Date(at);
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   return (
@@ -183,7 +195,11 @@ function ReturnWorkspace({ returnId }: { returnId: string }) {
                 ` · ${openRequests.length} question${openRequests.length === 1 ? "" : "s"} out with the client`}
             </span>
             <span className="text-xs text-faint">
-              {STAGE[ret.stage].staff} · due in {dueIn} days
+              {/* A filed return has no countdown — "due in -345 days" read as
+                  a bug, and the only date that matters now is when it went in. */}
+              {ret.stage === "filed"
+                ? `Filed · ${formatFiledDate(ret.lastActivity)}`
+                : `${STAGE[ret.stage].staff} · due in ${dueIn} days`}
             </span>
           </div>
           <ProgressBar value={ret.readiness.score} />
