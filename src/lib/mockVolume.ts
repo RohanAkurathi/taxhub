@@ -309,7 +309,7 @@ function heroSummaries(): ReturnSummary[] {
 /** The firm's whole book of business. Hero returns first so they're findable. */
 export const ALL_RETURNS: ReturnSummary[] = [
   ...heroSummaries(),
-  ...generateSummaries(236),
+  ...generateSummaries(235),
 ];
 
 export const MY_RETURNS = ALL_RETURNS.filter(

@@ -390,6 +390,14 @@ export interface TaxReturn {
   lastActivity: string;
   lines: ReturnLine[];
   readiness: Readiness;
+  /**
+   * Last year's return for the same client, when the firm holds one.
+   *
+   * It exists so the AI's prior-year corroboration is checkable rather than
+   * asserted: the claim "the same payer paid $1,395 last year" can be followed
+   * to the document that says so.
+   */
+  priorYearReturnId?: string;
   /** Estimated refund/owed, for the client-facing summary. */
   outcome?: {
     kind: "refund" | "owed";

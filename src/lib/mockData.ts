@@ -128,6 +128,43 @@ export function initialsOf(name: string): string {
 
 export const DOCUMENTS: SourceDocument[] = [
   {
+    id: "doc-rivera-2024-w2",
+    returnId: "ret-rivera-2024",
+    type: "W-2",
+    title: "W-2 · Wage and Tax Statement",
+    issuer: "Acme Corp",
+    taxYear: 2024,
+    uploadedBy: "Marcus Rivera",
+    uploadedAt: "2025-03-04T09:12:00",
+    pages: 1,
+    scanQuality: "clean",
+    feedsLines: ["1a"],
+    boxes: [
+      { id: "w2_employer", label: "Employer", value: "Acme Corp" },
+      { id: "w2_employee", label: "Employee", value: "Marcus Rivera" },
+      { id: "w2_box1", label: "Box 1 · Wages, tips, other comp.", value: "$78,500.00", confidence: 0.99 },
+      { id: "w2_box2", label: "Box 2 · Federal income tax withheld", value: "$11,900.00", confidence: 0.99 },
+    ],
+  },
+  {
+    id: "doc-rivera-2024-1099int",
+    returnId: "ret-rivera-2024",
+    type: "1099-INT",
+    title: "1099-INT · Interest Income",
+    issuer: "Chase Bank N.A.",
+    taxYear: 2024,
+    uploadedBy: "Marcus Rivera",
+    uploadedAt: "2025-03-04T09:14:00",
+    pages: 1,
+    scanQuality: "clean",
+    feedsLines: ["2b"],
+    boxes: [
+      { id: "int_payer", label: "Payer", value: "Chase Bank N.A." },
+      { id: "int_recipient", label: "Recipient", value: "Marcus Rivera" },
+      { id: "int_box1", label: "Box 1 · Interest income", value: "$1,395.00", confidence: 0.98, wide: true },
+    ],
+  },
+  {
     id: "doc-rivera-w2",
     returnId: "ret-rivera-2025",
     type: "W-2",
@@ -1166,9 +1203,143 @@ export function computeReadiness(lines: ReturnLine[], openItems: number) {
 /** The hand-authored K-1 lines plus the generated expense schedule. */
 const PETROV_ALL_LINES: ReturnLine[] = [...PETROV_LINES, ...generateBusinessLines()];
 
+
+/* -------------------------------------------------------------------------- */
+/* Marcus's prior year — filed, and therefore frozen                           */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Every other return in this prototype is mid-flight, which left one state in
+ * the design system with nothing behind it: `locked`. A filed return is the
+ * only honest way to show "what cannot be changed, and why" — the reason is
+ * not a permission, it is that the document has already gone to the IRS and
+ * the remedy is a different form entirely.
+ *
+ * It is Marcus's own prior year rather than a new client, because a firm keeps
+ * last year's return next to this year's, and it gives the current return
+ * something to be compared against.
+ */
+const RIVERA_2024_LINES: ReturnLine[] = [
+  {
+    id: "1a",
+    section: "Income",
+    label: "Wages, salaries, tips",
+    amount: 78500,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: { kind: "document", documentId: "doc-rivera-2024-w2", citation: "W-2 · Box 1", page: 1, boxId: "w2_box1" },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Read from the W-2" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+  {
+    id: "2b",
+    section: "Income",
+    label: "Taxable interest",
+    amount: 1395,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: { kind: "document", documentId: "doc-rivera-2024-1099int", citation: "1099-INT · Box 1", page: 1, boxId: "int_box1" },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Read from the 1099-INT" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+  {
+    id: "11",
+    section: "Adjustments & deductions",
+    label: "Adjusted gross income",
+    amount: 79895,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: { kind: "calculation", formula: "Sum of total income", inputs: [{ lineId: "1a", label: "Wages", amount: 78500 }, { lineId: "2b", label: "Taxable interest", amount: 1395 }] },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+  {
+    id: "12",
+    section: "Adjustments & deductions",
+    label: "Standard deduction",
+    amount: 14600,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: { kind: "rule", rule: "Standard deduction, single filer, 2024", detail: "Set by filing status. Not a figure anyone types." },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Applied the 2024 rule" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+  {
+    id: "15",
+    section: "Adjustments & deductions",
+    label: "Taxable income",
+    amount: 65295,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: { kind: "calculation", formula: "AGI less the standard deduction", inputs: [{ lineId: "11", label: "Adjusted gross income", amount: 79895 }, { lineId: "12", label: "Standard deduction", amount: 14600 }] },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+  {
+    id: "34",
+    section: "Refund",
+    label: "Amount overpaid",
+    amount: 1508,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: { kind: "calculation", formula: "Payments less total tax", inputs: [{ lineId: "25a", label: "Federal income tax withheld", amount: 11900 }, { lineId: "24", label: "Total tax", amount: 10392 }] },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+];
+
 export const HERO_RETURNS: TaxReturn[] = [
   {
     id: "ret-rivera-2025",
+    priorYearReturnId: "ret-rivera-2024",
     clientId: "u-marcus",
     clientName: "Marcus Rivera",
     formType: "1040",
@@ -1201,6 +1372,21 @@ export const HERO_RETURNS: TaxReturn[] = [
     lines: CHEN_LINES,
     readiness: computeReadiness(CHEN_LINES, 1),
     outcome: { kind: "refund", amount: 2140, provisional: true },
+  },
+  {
+    id: "ret-rivera-2024",
+    clientId: "u-marcus",
+    clientName: "Marcus Rivera",
+    formType: "1040",
+    taxYear: 2024,
+    stage: "filed",
+    preparerName: "Jordan Reyes",
+    reviewerName: "Dana Whitfield",
+    dueDate: "2025-04-15",
+    lastActivity: "2025-04-12T16:20:00",
+    lines: RIVERA_2024_LINES,
+    readiness: computeReadiness(RIVERA_2024_LINES, 0),
+    outcome: { kind: "refund", amount: 1508, provisional: false },
   },
   /*
    * Jordan's own return, and the reason it exists is twofold.

@@ -142,7 +142,18 @@ export function Inspector({
           {line.aiSuggestion.corroboration && (
             <p className="mt-1.5 text-xs leading-relaxed text-muted">
               <strong className="font-medium text-ink">Cross-check:</strong>{" "}
-              {line.aiSuggestion.corroboration}
+              {line.aiSuggestion.corroboration}{" "}
+              {/* A corroboration you cannot open is just another claim. Where
+                  the firm holds last year's return, the prior-year figure is
+                  followable to the filed document that states it. */}
+              {ret.priorYearReturnId && (
+                <Link
+                  href={`/returns/${ret.priorYearReturnId}?line=${line.id}`}
+                  className="whitespace-nowrap font-medium text-accentink underline-offset-2 hover:underline"
+                >
+                  See last year&rsquo;s return ↗
+                </Link>
+              )}
             </p>
           )}
         </Card>
