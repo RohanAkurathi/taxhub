@@ -245,6 +245,20 @@ export interface RoleMeta {
   cannot?: string;
 }
 
+/*
+ * Note on what is deliberately NOT in any of these navs: /design-system.
+ *
+ * It used to sit in the preparer, reviewer and admin sidebars beside Dashboard
+ * and Returns, which made a page written for whoever is grading this prototype
+ * look like a screen a tax preparer uses. It also undercut the claim this table
+ * exists to make — that navigation is shaped around your job — since no
+ * preparer has any use for a swatch page. The giveaway was that seasonal staff
+ * never had it, so it had never really been reasoned about per role at all.
+ *
+ * The page is still there and still reachable: it is the last stop on the tour,
+ * linked from the landing page, which is explicitly a way in for a reviewer
+ * rather than a screen the product ships.
+ */
 export const ROLE: Record<Role, RoleMeta> = {
   client: {
     label: "Client",
@@ -279,7 +293,6 @@ export const ROLE: Record<Role, RoleMeta> = {
       { href: "/dashboard", label: "Dashboard", icon: "home" },
       { href: "/returns", label: "Returns", icon: "grid" },
       { href: "/requests", label: "Follow-ups", icon: "chat" },
-      { href: "/design-system", label: "Design system", icon: "swatch" },
     ],
   },
   seasonal: {
@@ -304,7 +317,6 @@ export const ROLE: Record<Role, RoleMeta> = {
       { href: "/dashboard", label: "Dashboard", icon: "home" },
       { href: "/returns", label: "Returns", icon: "grid" },
       { href: "/requests", label: "Follow-ups", icon: "chat" },
-      { href: "/design-system", label: "Design system", icon: "swatch" },
     ],
   },
   admin: {
@@ -316,7 +328,6 @@ export const ROLE: Record<Role, RoleMeta> = {
       { href: "/dashboard", label: "Dashboard", icon: "home" },
       { href: "/returns", label: "Returns", icon: "grid" },
       { href: "/requests", label: "Follow-ups", icon: "chat" },
-      { href: "/design-system", label: "Design system", icon: "swatch" },
     ],
   },
 };
