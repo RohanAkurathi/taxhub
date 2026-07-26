@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { Card, SectionLabel } from "@/components/ui";
 import { LogoMark } from "@/components/Logo";
-import { TOUR } from "@/lib/tour";
+import { TOUR, stopIndex } from "@/lib/tour";
 import { useStore } from "@/lib/store";
 
 /* ---------------------------------------------------------------------------
@@ -56,8 +56,9 @@ export default function Home() {
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
           This page is a way in for whoever is reviewing the prototype, not a screen
           the product ships. The real first-run experience is{" "}
-          <span className="font-medium text-ink">the client&rsquo;s empty account</span>,
-          which is where the tour starts.
+          <span className="font-medium text-ink">the client&rsquo;s empty account</span>
+          {" "}&mdash; stop {stopIndex("client") + 1} below. {/* derived, so a
+          reorder of the tour cannot leave this pointing at the wrong card */}
         </p>
 
         {/* The workflow, before anything else. Nothing on the next screens

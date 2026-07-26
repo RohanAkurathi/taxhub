@@ -28,22 +28,22 @@ export interface TourStop {
 
 export const TOUR: TourStop[] = [
   {
-    slug: "client",
-    href: "/home",
-    title: "Where a client starts",
+    slug: "dashboard",
+    href: "/dashboard",
+    title: "What needs you today",
     blurb:
-      "A brand-new client account on day one. Nothing uploaded, nothing to unlearn. This is the real first-run experience, not an orientation page — and it is where every return in the rest of this tour begins.",
+      "Where firm staff actually land. Columns are ownership, not process stage, because at 8am the only question is whose move it is — and every card explains why it sits where it does.",
     tryThis:
-      "Complete the checklist and watch the page become a status page. Then switch to Elena Petrov to see a business owner's version of the same product.",
-    challenges: [3, 6],
-    acting: { kind: "self", role: "client", as: "reyes" },
+      "Find Marcus Rivera under 'Waiting on client'. His card names what is holding his return up — click it and the next stop is that exact line.",
+    challenges: [5, 6, 7],
+    acting: { kind: "staff", role: "preparer" },
   },
   {
     slug: "review",
     href: "/returns/ret-rivera-2025?line=2b",
     title: "Where a number comes from",
     blurb:
-      "The firm's side of the same relationship. The whole 1040, every line with a health state — and clicking any of them, verified, calculated or deliberately blank, shows exactly where that figure came from.",
+      "The return the dashboard just sent you to. Every line carries a health state, and clicking any of them — verified, calculated or deliberately blank — shows exactly where that figure came from.",
     tryThis:
       "The AI read $1,432 here but the return says $1,240. Confirm is disabled until you click the highlighted box on the document. Do that, confirm, and watch six lines recalculate — then undo it.",
     challenges: [1, 8, 10],
@@ -61,15 +61,15 @@ export const TOUR: TourStop[] = [
     acting: { kind: "staff", role: "preparer" },
   },
   {
-    slug: "dashboard",
-    href: "/dashboard",
-    title: "What to work on now",
+    slug: "client",
+    href: "/home",
+    title: "Where a client starts",
     blurb:
-      "Columns are ownership, not process stage, because at 8am the only question is whose move it is. Ranking is real, and every card can explain why it sits where it does.",
+      "The same firm from outside, on day one. Nothing uploaded, nothing to unlearn — the real first-run experience rather than an orientation page.",
     tryThis:
-      "Switch to Reviewer in the top right — same firm, different job, different verbs. Then try Seasonal preparer and read the line at the bottom of the sidebar.",
-    challenges: [5, 6, 7],
-    acting: { kind: "staff", role: "preparer" },
+      "Complete the checklist and watch the page become a status page. Then switch to Elena Petrov to see a business owner's version of the same product.",
+    challenges: [3, 6],
+    acting: { kind: "self", role: "client", as: "reyes" },
   },
   {
     slug: "scale",
