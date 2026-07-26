@@ -5,6 +5,7 @@ import { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ROLE } from "@/lib/design";
+import { REVIEW_QUEUE } from "@/lib/mockVolume";
 import { CLIENT_ACCOUNTS, useStore } from "@/lib/store";
 import { Avatar, Chip, cx } from "./ui";
 import { LogoMark } from "./Logo";
@@ -96,7 +97,7 @@ export function Shell({
   right?: ReactNode;
   context?: ContextNav;
 }) {
-  const { acting, setActing, role, returns } = useStore();
+  const { acting, setActing, role } = useStore();
   const pathname = usePathname();
   const router = useRouter();
   const nav = ROLE[role].nav;
@@ -134,7 +135,13 @@ export function Shell({
   }, [menuOpen]);
 
   const viewingAsSelf = acting.kind === "self";
-  const reviewCount = returns.filter((r) => r.stage === "in_review").length;
+  /*
+   * Counted the same way the reviewer's own dashboard counts it. This used to
+   * filter the five hand-authored returns, so the menu promised 1 and the
+   * screen it opened showed 14 — one click apart, and the sort of thing a
+   * reviewer notices immediately.
+   */
+  const reviewCount = REVIEW_QUEUE.length;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-ground">

@@ -616,7 +616,7 @@ const RIVERA_LINES: ReturnLine[] = [
     id: "12",
     section: "Adjustments & deductions",
     label: "Standard deduction",
-    amount: 14600,
+    amount: 15750,
     state: "rule",
     editable: false,
     lockReason:
@@ -625,7 +625,7 @@ const RIVERA_LINES: ReturnLine[] = [
     provenance: {
       kind: "rule",
       rule: "IRS standard deduction, tax year 2025",
-      detail: "Filing status: single. Table value $14,600.",
+      detail: "Filing status: single. Table value $15,750.",
     },
     pipeline: [
       { actor: "ai", actorName: "AI", status: "done", note: "Rule applied" },
@@ -670,7 +670,7 @@ const RIVERA_LINES: ReturnLine[] = [
     id: "15",
     section: "Adjustments & deductions",
     label: "Taxable income",
-    amount: 81240,
+    amount: 80090,
     state: "calculated",
     editable: false,
     lockReason: "Calculated from AGI less deductions.",
@@ -679,7 +679,7 @@ const RIVERA_LINES: ReturnLine[] = [
       formula: "Line 11 − Line 12 − Line 13",
       inputs: [
         { lineId: "11", label: "Adjusted gross income", amount: 98240 },
-        { lineId: "12", label: "Standard deduction", amount: 14600 },
+        { lineId: "12", label: "Standard deduction", amount: 15750 },
         { lineId: "13", label: "QBI deduction", amount: 2400 },
       ],
     },
@@ -695,14 +695,14 @@ const RIVERA_LINES: ReturnLine[] = [
     id: "16",
     section: "Tax & payments",
     label: "Tax",
-    amount: 12787,
+    amount: 12534,
     state: "calculated",
     editable: false,
     lockReason: "Calculated from the 2025 tax tables.",
     provenance: {
       kind: "calculation",
       formula: "2025 tax table, single filer, applied to taxable income",
-      inputs: [{ lineId: "15", label: "Taxable income", amount: 81240 }],
+      inputs: [{ lineId: "15", label: "Taxable income", amount: 80090 }],
     },
     pipeline: [
       { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
@@ -716,14 +716,14 @@ const RIVERA_LINES: ReturnLine[] = [
     id: "24",
     section: "Tax & payments",
     label: "Total tax",
-    amount: 12787,
+    amount: 12534,
     state: "calculated",
     editable: false,
     lockReason: "Calculated.",
     provenance: {
       kind: "calculation",
       formula: "Line 16 plus other taxes",
-      inputs: [{ lineId: "16", label: "Tax", amount: 12787 }],
+      inputs: [{ lineId: "16", label: "Tax", amount: 12534 }],
     },
     pipeline: [
       { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
@@ -811,7 +811,7 @@ const RIVERA_LINES: ReturnLine[] = [
     id: "34",
     section: "Refund",
     label: "Overpayment — your refund",
-    amount: 1333,
+    amount: 1586,
     state: "calculated",
     editable: false,
     lockReason: "Calculated: payments less total tax.",
@@ -820,7 +820,7 @@ const RIVERA_LINES: ReturnLine[] = [
       formula: "Line 33 − Line 24",
       inputs: [
         { lineId: "33", label: "Total payments", amount: 14120 },
-        { lineId: "24", label: "Total tax", amount: 12787 },
+        { lineId: "24", label: "Total tax", amount: 12534 },
       ],
     },
     pipeline: [
@@ -1189,7 +1189,19 @@ function generateBusinessLines(): ReturnLine[] {
 function generateBusinessDocuments(): SourceDocument[] {
   const rng = seeded(447733);
   return EXPENSE_CATEGORIES.map((label, i) => {
-    const amount = Math.round((900 + rng() * 46_000) / 10) * 10;
+    /*
+     * The document has to say what the line says.
+     *
+     * This used to roll its own amount from a second seed, so every one of
+     * these 39 receipts stated a different total from the line it feeds —
+     * on the one return whose whole purpose is following a document through
+     * to the number it becomes. The draw is still taken and discarded so the
+     * rest of the seeded sequence, and therefore which receipts scan badly,
+     * is unchanged.
+     */
+    rng();
+    const amount =
+      PETROV_ALL_LINES.find((l) => l.id === `Sch-${20 + i}`)?.amount ?? 0;
     const low = rng() > 0.88;
     return {
       id: `doc-petrov-exp-${i}`,
@@ -1350,9 +1362,57 @@ const RIVERA_2024_LINES: ReturnLine[] = [
     editable: false,
     lockReason:
       "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
-    provenance: { kind: "calculation", formula: "AGI less the standard deduction", inputs: [{ lineId: "11", label: "Adjusted gross income", amount: 79895 }, { lineId: "12", label: "Standard deduction", amount: 14600 }] },
+    provenance: { kind: "calculation", formula: "AGI less the standard deduction", inputs: [{ lineId: "11", label: "Adjusted gross income", amount: 79895 }, { lineId: "12", label: "Standard deduction", amount: 15750 }] },
     pipeline: [
       { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+  {
+    id: "24",
+    section: "Tax & payments",
+    label: "Total tax",
+    amount: 9418,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: {
+      kind: "calculation",
+      formula: "2024 single-filer brackets applied to taxable income",
+      inputs: [{ lineId: "15", label: "Taxable income", amount: 65295 }],
+    },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
+      { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
+      { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
+    ],
+    history: [
+      { at: "2025-04-12T16:20:00", actor: "Dana Whitfield", action: "locked", detail: "Return filed with the IRS" },
+    ],
+  },
+  {
+    id: "25a",
+    section: "Tax & payments",
+    label: "Federal income tax withheld",
+    amount: 11900,
+    state: "locked",
+    editable: false,
+    lockReason:
+      "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
+    provenance: {
+      kind: "document",
+      documentId: "doc-rivera-2024-w2",
+      citation: "W-2 · Box 2",
+      page: 1,
+      boxId: "w2_box2",
+    },
+    pipeline: [
+      { actor: "ai", actorName: "AI", status: "done", note: "Read from the W-2" },
       { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
       { actor: "reviewer", actorName: "Dana Whitfield", status: "done", note: "Approved for filing" },
     ],
@@ -1364,12 +1424,12 @@ const RIVERA_2024_LINES: ReturnLine[] = [
     id: "34",
     section: "Refund",
     label: "Amount overpaid",
-    amount: 1508,
+    amount: 2482,
     state: "locked",
     editable: false,
     lockReason:
       "Filed on 12 April 2025. A filed return cannot be edited — a change would have to go out as an amended return on Form 1040-X.",
-    provenance: { kind: "calculation", formula: "Payments less total tax", inputs: [{ lineId: "25a", label: "Federal income tax withheld", amount: 11900 }, { lineId: "24", label: "Total tax", amount: 10392 }] },
+    provenance: { kind: "calculation", formula: "Payments less total tax", inputs: [{ lineId: "25a", label: "Federal income tax withheld", amount: 11900 }, { lineId: "24", label: "Total tax", amount: 9418 }] },
     pipeline: [
       { actor: "ai", actorName: "AI", status: "done", note: "Computed" },
       { actor: "preparer", actorName: "Jordan Reyes", status: "done", note: "Checked against the source" },
@@ -1401,7 +1461,7 @@ export const HERO_RETURNS: TaxReturn[] = [
     lastActivity: "2026-03-21T16:05:00",
     lines: RIVERA_LINES,
     readiness: computeReadiness(RIVERA_LINES, 1),
-    outcome: { kind: "refund", amount: 1333, provisional: true },
+    outcome: { kind: "refund", amount: 1586, provisional: true },
   },
   {
     id: "ret-chen-2025",
@@ -1415,8 +1475,14 @@ export const HERO_RETURNS: TaxReturn[] = [
     dueDate: "2026-04-15",
     lastActivity: "2026-03-25T07:40:00",
     lines: CHEN_LINES,
-    readiness: computeReadiness(CHEN_LINES, 1),
-    outcome: { kind: "refund", amount: 2140, provisional: true },
+    // Two unresolved requests, not one — the dashboard, her return header and
+    // Follow-ups all count two, and this was the only surface saying one.
+    readiness: computeReadiness(CHEN_LINES, 2),
+    // Derived from her own lines rather than picked: total income 131,610,
+    // less the 2025 standard deduction (which beats her 2,340 of itemised
+    // giving), taxed on the same brackets calc.ts uses, against 21,880
+    // withheld. Provisional because line 19 is still unanswered.
+    outcome: { kind: "refund", amount: 1227, provisional: true },
   },
   {
     id: "ret-rivera-2024",
@@ -1431,7 +1497,7 @@ export const HERO_RETURNS: TaxReturn[] = [
     lastActivity: "2025-04-12T16:20:00",
     lines: RIVERA_2024_LINES,
     readiness: computeReadiness(RIVERA_2024_LINES, 0),
-    outcome: { kind: "refund", amount: 1508, provisional: false },
+    outcome: { kind: "refund", amount: 2482, provisional: false },
   },
   /*
    * Jordan's own return, and the reason it exists is twofold.
@@ -1469,7 +1535,14 @@ export const HERO_RETURNS: TaxReturn[] = [
     lastActivity: "2026-03-24T14:20:00",
     lines: PETROV_ALL_LINES,
     readiness: computeReadiness(PETROV_ALL_LINES, 1),
-    outcome: { kind: "owed", amount: 18400, provisional: true },
+    /*
+     * No outcome, deliberately. An 1120-S is a pass-through: the S-corp itself
+     * owes no federal income tax, so "what you'll likely owe · $18,400" was
+     * both underived and the wrong shape of number for this form. Elena's
+     * liability arrives on her personal return via the K-1, which the firm
+     * would hold as a separate 1040. The client screen already renders
+     * correctly with no outcome — Jordan's day-one account has none either.
+     */
   },
 ];
 

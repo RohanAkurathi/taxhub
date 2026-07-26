@@ -490,8 +490,8 @@ export function DocumentView({
       )}
 
       <p className="border-t border-lockedge px-3.5 py-2 text-[11px] leading-relaxed text-faint">
-        The uploaded file is never modified. Every correction is stored as a separate,
-        reversible change.
+        The uploaded file is never modified. Every correction is stored on top of it as a
+        separate change.
       </p>
     </figure>
   );

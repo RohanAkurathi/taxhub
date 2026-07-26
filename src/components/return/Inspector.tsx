@@ -105,6 +105,19 @@ export function Inspector({
   // difference between "a human approved this" and "a human clicked past it".
   const confirmBlocked = lowConfidence && !checkedEvidence;
 
+  // Which downstream lines this edit would actually move, on this return.
+  const downstreamHere = downstreamOf(line.id).filter((id) =>
+    ret.lines.some((l) => l.id === id)
+  );
+
+  /*
+   * A filed return is read-only for everyone, and that has to include the
+   * reviewer. Their branch rendered Approve and Send back with no editability
+   * check at all, so a locked line offered sign-off on a return that has
+   * already gone to the IRS.
+   */
+  const frozen = !meta.editable && line.state === "locked";
+
   return (
     <aside className="app-scroll w-[340px] shrink-0 border-l border-line bg-panel px-5 py-5">
       <h2 className="text-[15px] font-semibold leading-snug">
@@ -265,7 +278,12 @@ export function Inspector({
       <section className="mt-5 border-t border-hair pt-4">
         <SectionLabel>What you can do</SectionLabel>
 
-        {isReviewer ? (
+        {frozen ? (
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Nothing on this return can be changed by anyone, including a reviewer
+            or an administrator. It has been filed.
+          </p>
+        ) : isReviewer ? (
           /* ---------------- Reviewer: approve, or send it back ------------- */
           sendingBack ? (
             <div className="mt-2">
@@ -372,13 +390,13 @@ export function Inspector({
               className="tnum mt-1 w-full rounded-md border border-line bg-canvas px-2.5 py-1.5 text-sm"
               autoFocus
             />
-            {downstreamOf(line.id).length > 0 && (
+            {/* Scoped to this return. downstreamOf walks the whole 1040 rule
+                graph and has no idea which return is open, so on a six-line
+                return it promised to recalculate lines that are not there. */}
+            {downstreamHere.length > 0 && (
               <p className="mt-1.5 text-[11px] text-muted">
                 Changing this will recalculate{" "}
-                {downstreamOf(line.id)
-                  .map((d) => `line ${d}`)
-                  .join(", ")}
-                .
+                {downstreamHere.map((d) => `line ${d}`).join(", ")}.
               </p>
             )}
             <div className="mt-2 flex gap-2">
@@ -534,7 +552,7 @@ export function Inspector({
         )}
         <p className="mt-2.5 text-[11px] leading-relaxed text-faint">
           The uploaded document is never altered. Every change is stored separately, which
-          is what makes this history — and undoing any of it — possible.
+          is what makes this history possible, and what lets the last change be undone.
         </p>
       </section>
     </aside>

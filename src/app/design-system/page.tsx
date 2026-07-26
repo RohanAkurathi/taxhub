@@ -38,9 +38,9 @@ const STATE_ACTIONS: Record<FieldState, string> = {
   ai_extracted: "Click the amount to jump to the exact box on the document it was read from. Confirm it in one click to make it Verified, or type over it. A return cannot be filed while lines nobody confirmed are still sitting here.",
   needs_review: "This is the work. Open it, compare the AI's reading against the source, then confirm, correct, or ask the client. It cannot be accepted in bulk, and it holds the return out of Ready to file until someone decides.",
   flagged: "Only a resolution clears it. Read the note, reply in the thread attached to the line, then resolve — which records the answer and returns the line to Verified. Editing the number does not clear the flag; a person raised it, so a person closes it.",
-  edited: "Same permissions as Verified. The AI's original reading is kept in the line's history and can be restored from there, so an override is never a silent overwrite.",
+  edited: "Same permissions as Verified. The AI's original reading is kept in the line's history, so an override is never a silent overwrite.",
   calculated: "You cannot type into it, and we do not render a greyed-out box pretending you could. Click it to see the formula and the lines feeding it. To change it, change a source line — this one follows on its own, and tells you it moved.",
-  rule: "You cannot type into it. Click it to see which rule produced it and which input drove the rule — filing status, age, dependants. Change that input and the rule re-runs.",
+  rule: "You cannot type into it. Click it to see which rule produced it and which input drove the rule — filing status, age, dependants.",
   empty: "A blank is a decision, not an omission. Click it to read why it is blank and who confirmed that. Typing a value in is allowed and moves the line to Edited.",
   locked: "Read-only for everyone, admins included. The return has been filed. Changing a filed number means filing an amendment, which creates a new return — the original stays exactly as it was sent.",
 };
@@ -311,7 +311,7 @@ export default function DesignSystemPage() {
                     <span className="tnum text-xs text-faint">2b</span>
                     <span className="flex-1 text-sm">Taxable interest</span>
                     <span className="tnum text-sm font-medium">
-                      {formatMoney(1462)}
+                      {formatMoney(1432)}
                     </span>
                   </div>
                   <div className="mt-2">

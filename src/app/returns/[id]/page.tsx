@@ -414,7 +414,7 @@ function SummaryOnlyReturn({ summary }: { summary: ReturnSummary }) {
           <p className="mt-1.5 text-sm leading-relaxed text-muted">
             This prototype carries the firm&rsquo;s full book of 240 returns so that
             search, filtering and prioritization can be judged at real volume, but
-            only three are built out line by line. Those three are where the
+            only four are built out line by line. Those four are where the
             traceability and review work can be seen end to end.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -428,6 +428,11 @@ function SummaryOnlyReturn({ summary }: { summary: ReturnSummary }) {
             </Link>
             <Link href="/returns/ret-petrov-2025">
               <Button size="sm">Elena Petrov · business return</Button>
+            </Link>
+            {/* The copy said three and listed three, but a fourth exists and is
+                the only one that shows a filed, frozen return. */}
+            <Link href="/returns/ret-rivera-2024">
+              <Button size="sm">Marcus Rivera · 2024, filed</Button>
             </Link>
           </div>
         </Card>

@@ -554,7 +554,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           isAmount
             ? {
                 title: "Answer applied to the return",
-                detail: `Line ${lineId} now reads ${value}, and the flag is cleared.`,
+                detail: `Line ${lineId} now reads ${value}.`,
                 tone: "ok",
               }
             : {
