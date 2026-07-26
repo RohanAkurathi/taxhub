@@ -1098,8 +1098,18 @@ function generateBusinessLines(): ReturnLine[] {
     const roll = rng();
     // Most of a real return is quiet. Only a handful of lines earn attention,
     // which is exactly the ratio that makes the attention filter useful.
+    // "edited" earns a slice of its own: it is the state that proves a person
+    // can overrule the machine and that the original survives in the history.
+    // Without one seeded instance it existed only if a reviewer happened to
+    // edit something, which is a poor way to demonstrate a documented state.
     const state: ReturnLine["state"] =
-      roll > 0.94 ? "needs_review" : roll > 0.62 ? "ai_extracted" : "verified";
+      roll > 0.94
+        ? "needs_review"
+        : roll > 0.88
+        ? "edited"
+        : roll > 0.62
+        ? "ai_extracted"
+        : "verified";
     const confidence =
       state === "needs_review" ? 0.6 + rng() * 0.22 : 0.9 + rng() * 0.09;
     const docId = `doc-petrov-exp-${i}`;
@@ -1131,10 +1141,45 @@ function generateBusinessLines(): ReturnLine[] {
           : undefined,
       pipeline: [
         { actor: "ai", actorName: "AI", status: state === "needs_review" ? "attention" : "done", note: `Read at ${Math.round(confidence * 100)}%` },
-        { actor: "preparer", actorName: "Jordan Reyes", status: state === "verified" ? "done" : "waiting", note: state === "verified" ? "Verified" : undefined },
+        {
+          actor: "preparer",
+          actorName: "Jordan Reyes",
+          // An edited line is one the preparer has already acted on, so leaving
+          // them "waiting" here contradicted the state beside it.
+          status: state === "verified" || state === "edited" ? "done" : "waiting",
+          note:
+            state === "edited"
+              ? "Corrected the AI's reading"
+              : state === "verified"
+              ? "Verified"
+              : undefined,
+        },
         { actor: "reviewer", actorName: "Dana Whitfield", status: "waiting" },
       ],
-      history: [],
+      /* The design system promises that an edited value keeps its original in
+         the history. That has to be true, so an edited line carries the
+         override it describes. Derived from `amount` rather than another
+         rng() call, which would shift every later line in this seeded run. */
+      history:
+        state === "edited"
+          ? [
+              {
+                at: "2026-03-22T11:15:00",
+                actor: "Jordan Reyes",
+                action: "edited" as const,
+                detail: "Receipt total re-read by hand; the AI had picked up the pre-tax subtotal",
+                from: Math.round((amount * 1.08) / 10) * 10,
+                to: amount,
+              },
+              {
+                at: "2026-03-20T09:02:00",
+                actor: "AI",
+                action: "extracted" as const,
+                detail: `Read from the expense schedule at ${Math.round(confidence * 100)}%`,
+                to: Math.round((amount * 1.08) / 10) * 10,
+              },
+            ]
+          : [],
     });
   });
 
