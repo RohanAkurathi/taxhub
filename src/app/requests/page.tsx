@@ -15,7 +15,7 @@ import {
 } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { daysSince, relativeTime, roleLabelForName } from "@/lib/mockData";
-import { agingTone, returnSummaryById } from "@/lib/mockVolume";
+import { REVIEW_QUEUE, agingTone, returnSummaryById } from "@/lib/mockVolume";
 import type { Owner, RequestStatus, ThreadAnchor, TaxReturn, ReturnLine } from "@/lib/types";
 
 /* ---------------------------------------------------------------------------
@@ -201,8 +201,10 @@ export default function OpenItemsPage() {
           {isReviewer ? (
             <>
               <Card className="p-3.5">
+                {/* Counted the same way as the role menu and the reviewer
+                    dashboard — this said 1 while both of those said 14. */}
                 <p className="tnum text-2xl font-semibold">
-                  {awaitingApproval.length}
+                  {REVIEW_QUEUE.length}
                 </p>
                 <p className="mt-0.5 text-sm text-muted">
                   returns awaiting your sign-off
@@ -308,7 +310,7 @@ function ApprovalGroup({ returns }: { returns: TaxReturn[] }) {
         <span className="tnum text-sm text-faint">{returns.length}</span>
       </div>
       <p className="mt-0.5 text-sm text-muted">
-        Finished work. Nothing here can be filed until you have been through it.
+        Finished work. Nothing here can be filed until you have been through it. The one below is built out line by line in this prototype; the rest are summary rows on your dashboard.
       </p>
 
       {returns.length === 0 ? (
