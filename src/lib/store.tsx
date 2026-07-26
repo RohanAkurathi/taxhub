@@ -161,9 +161,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ? "Dana Whitfield"
       : "Jordan Reyes";
 
+  /**
+   * Confirmations, one at a time per kind.
+   *
+   * Working quickly used to stack them: three checklist items ticked in a row
+   * produced three identical "Got it — thank you" cards sitting on top of each
+   * other, which reads as three separate things having happened. So a repeat of
+   * the same message replaces the one already showing and restarts its clock,
+   * and the rail is capped at three so a fast run of *different* confirmations
+   * still cannot bury the page.
+   *
+   * The superseded card's timer is left to fire harmlessly — by then its id is
+   * gone from the list and the filter is a no-op.
+   */
   const pushToast = useCallback((t: Omit<Toast, "id">) => {
     const id = ++toastSeq;
-    setToasts((cur) => [...cur, { ...t, id }]);
+    setToasts((cur) => [...cur.filter((x) => x.title !== t.title), { ...t, id }].slice(-3));
     setTimeout(() => setToasts((cur) => cur.filter((x) => x.id !== id)), 5200);
   }, []);
 
