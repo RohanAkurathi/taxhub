@@ -3,7 +3,7 @@
 A prototype tax platform for a CPA firm and its clients, built for the GreenGrowth
 AI Engineer case study. It covers all ten challenges in the brief.
 
-**Live: [taxhub-chi.vercel.app](https://taxhub-chi.vercel.app)** · **Video:** _(add link)_
+**Live: [taxhub-chi.vercel.app](https://taxhub-chi.vercel.app)** · **Video: [watch the walkthrough](https://github.com/RohanAkurathi/taxhub/releases/download/v1.0/TaxHub-walkthrough.mp4)** (12 min)
 
 The home page is a guided tour: six stops in order, each saying what to try and
 which challenges it covers. Start there.
